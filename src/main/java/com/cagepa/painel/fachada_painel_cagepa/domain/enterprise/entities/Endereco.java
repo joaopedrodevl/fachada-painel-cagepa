@@ -3,7 +3,7 @@ package com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.entities;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-import com.cagepa.painel.fachada_painel_cagepa.domain.enums.TipoEndereco;
+import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.enums.TipoEndereco;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

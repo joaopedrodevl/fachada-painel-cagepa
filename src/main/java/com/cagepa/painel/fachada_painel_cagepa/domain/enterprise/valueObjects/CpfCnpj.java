@@ -1,6 +1,6 @@
 package com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.valueObjects;
 
-import com.cagepa.painel.fachada_painel_cagepa.domain.enums.TipoDocumento;
+import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.enums.TipoDocumento;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;

@@ -4,11 +4,31 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.NoRepositoryBean;
 
+@NoRepositoryBean
 public interface IGenericRepository<T, ID> extends JpaRepository<T, ID> {
-    Optional<T> findById(ID id);
-    List<T> listar();
+    /**
+     * Retorna todos os registros (delegando para {@link JpaRepository#findAll()}).
+     */
+    default List<T> listar() {
+        return findAll();
+    }
+
+    /**
+     * Atualiza a entidade (delegando para {@link JpaRepository#save(Object)}).
+     */
+    default T atualizar(T entity) {
+        return save(entity);
+    }
+
+    /**
+     * Salva a entidade (delegando para {@link JpaRepository#save(Object)}).
+     */
+    default T salvar(T entity) {
+        return save(entity);
+    }
+
     void deleteById(ID id);
-    T atualizar(T entity);
-    T salvar(T entity);
+    Optional<T> findById(ID id);
 }

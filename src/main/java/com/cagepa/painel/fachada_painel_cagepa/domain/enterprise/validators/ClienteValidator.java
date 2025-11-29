@@ -2,9 +2,11 @@ package com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.validators;
 
 import com.cagepa.painel.fachada_painel_cagepa.domain.application.dtos.input.DadosCadastroClienteInputDTO;
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.valueObjects.CpfCnpj;
+import org.springframework.stereotype.Component;
 
 import java.util.regex.Pattern;
 
+@Component
 public class ClienteValidator {
     
     private static final Pattern EMAIL_PATTERN = Pattern.compile(

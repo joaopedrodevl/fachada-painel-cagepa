@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cagepa.painel.fachada_painel_cagepa.domain.application.dtos.input.DadosAtualizarClienteInputDTO;
+import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.enums.StatusCliente;
+import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.enums.TipoCliente;
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.factories.EnderecoFactory;
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.valueObjects.CpfCnpj;
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.valueObjects.Telefone;
-import com.cagepa.painel.fachada_painel_cagepa.domain.enums.StatusCliente;
-import com.cagepa.painel.fachada_painel_cagepa.domain.enums.TipoCliente;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

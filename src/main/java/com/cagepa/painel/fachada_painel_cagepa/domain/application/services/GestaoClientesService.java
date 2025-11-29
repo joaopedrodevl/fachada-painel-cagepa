@@ -9,10 +9,9 @@ import com.cagepa.painel.fachada_painel_cagepa.domain.application.dtos.input.Dad
 import com.cagepa.painel.fachada_painel_cagepa.domain.application.dtos.input.DadosCadastroClienteInputDTO;
 import com.cagepa.painel.fachada_painel_cagepa.domain.application.repositories.IClienteRepository;
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.entities.Cliente;
+import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.enums.StatusCliente;
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.factories.ClienteFactory;
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.validators.ClienteValidator;
-import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.valueObjects.CpfCnpj;
-import com.cagepa.painel.fachada_painel_cagepa.domain.enums.StatusCliente;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -41,7 +40,7 @@ public class GestaoClientesService {
 
     Cliente consultar(String cpfCnpj) {
         clienteValidator.validarCpfCnpj(cpfCnpj);
-        return clienteRepository.buscarPorCpfCnpj(cpfCnpj)
+        return clienteRepository.findByCpfCnpjValor(cpfCnpj)
                 .orElseThrow(() -> new RuntimeException("Cliente não encontrado com o CPF/CNPJ informado."));
     }
 

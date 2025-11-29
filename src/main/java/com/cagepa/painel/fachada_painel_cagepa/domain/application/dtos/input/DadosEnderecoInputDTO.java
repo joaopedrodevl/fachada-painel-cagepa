@@ -1,6 +1,6 @@
 package com.cagepa.painel.fachada_painel_cagepa.domain.application.dtos.input;
 
-import com.cagepa.painel.fachada_painel_cagepa.domain.enums.TipoEndereco;
+import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.enums.TipoEndereco;
 
 public record DadosEnderecoInputDTO(
     String logradouro,

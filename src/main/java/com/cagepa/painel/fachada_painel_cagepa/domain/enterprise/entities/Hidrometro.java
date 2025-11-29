@@ -3,7 +3,7 @@ package com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.entities;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.cagepa.painel.fachada_painel_cagepa.domain.enums.StatusHidrometro;
+import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.enums.StatusHidrometro;
 
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;

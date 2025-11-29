@@ -4,7 +4,9 @@ import com.cagepa.painel.fachada_painel_cagepa.domain.application.dtos.input.Dad
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.entities.Cliente;
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.factories.interfaces.IClienteFactory;
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.valueObjects.Telefone;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ClienteFactory implements IClienteFactory {
     @Override
     public Cliente criarCliente(DadosCadastroClienteInputDTO dados) {
