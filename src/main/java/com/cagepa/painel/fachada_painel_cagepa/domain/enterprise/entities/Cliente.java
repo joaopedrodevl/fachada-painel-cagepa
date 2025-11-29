@@ -12,19 +12,16 @@ import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.valueObjects.Cp
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.valueObjects.Telefone;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "clientes")
 @Getter
 @Setter
-@EqualsAndHashCode
+@EqualsAndHashCode(of = "id")
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"enderecos", "hidrometros"})
 public class Cliente {
     
     @Id
@@ -34,8 +31,14 @@ public class Cliente {
     @Embedded
     private CpfCnpj cpfCnpj;
 
-    @Column(name = "nome", nullable = false, length = 100)
-    private String nome;
+    @Column(name = "nome_completo", length = 100)
+    private String nomeCompleto;
+
+    @Column(name = "nome_fantasia", length = 100)
+    private String nomeFantasia;
+
+    @Column(name = "razao_social", length = 150)
+    private String razaoSocial;
 
     @Column(name = "email", nullable = false, length = 100, unique = true)
     private String email;
@@ -43,9 +46,9 @@ public class Cliente {
     @Embedded
     private Telefone telefone;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
-    @JoinColumn(name = "endereco_id", nullable = false)
-    private Endereco endereco;
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @JoinColumn(name = "cliente_id")
+    private List<Endereco> enderecos = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_cliente")
@@ -80,22 +83,55 @@ public class Cliente {
         dataAtualizacao = LocalDateTime.now();
     }
 
-    public Cliente(CpfCnpj cpfCnpj, String nome, String email, Telefone telefone, Endereco endereco, TipoCliente tipoCliente) {
+    public Cliente(CpfCnpj cpfCnpj, String nomeCompleto, String nomeFantasia, String razaoSocial, 
+                   String email, Telefone telefone, Endereco endereco, TipoCliente tipoCliente) {
         this.cpfCnpj = cpfCnpj;
-        this.nome = nome;
+        this.nomeCompleto = nomeCompleto;
+        this.nomeFantasia = nomeFantasia;
+        this.razaoSocial = razaoSocial;
         this.email = email;
         this.telefone = telefone;
-        this.endereco = endereco;
+        this.enderecos = new ArrayList<>();
+        if (endereco != null) {
+            this.enderecos.add(endereco);
+        }
         this.tipoCliente = tipoCliente;
         this.statusCliente = StatusCliente.ATIVO;
     }
 
+    public String getNomeExibicao() {
+        return cpfCnpj.isCnpj() ? nomeFantasia : nomeCompleto;
+    }
+
     public void atualizarInformacoes(DadosAtualizarClienteInputDTO dados) {
-        this.nome = dados.nome() != null ? dados.nome() : this.nome;
-        this.email = dados.email() != null ? dados.email() : this.email;
-        this.telefone = new Telefone(dados.telefone()) != null ? new Telefone(dados.telefone()) : this.telefone;
-        this.endereco = new EnderecoFactory().criarEndereco(dados.endereco()) != null ? new EnderecoFactory().criarEndereco(dados.endereco()) : this.endereco;
-        this.tipoCliente = dados.tipoCliente() != null ? dados.tipoCliente() : this.tipoCliente;
+        if (cpfCnpj.isCpf()) {
+            this.nomeCompleto = dados.nome() != null ? dados.nome() : this.nomeCompleto;
+        } else {
+            this.nomeFantasia = dados.nome() != null ? dados.nome() : this.nomeFantasia;
+            this.razaoSocial = dados.razaoSocial() != null ? dados.razaoSocial() : this.razaoSocial;
+        }
+        
+        if (dados.email() != null) {
+            this.email = dados.email();
+        }
+        
+        if (dados.telefone() != null) {
+            this.telefone = new Telefone(dados.telefone());
+        }
+        
+        if (dados.endereco() != null) {
+            Endereco novoEndereco = new EnderecoFactory().criarEndereco(dados.endereco());
+            this.enderecos.clear();
+            this.enderecos.add(novoEndereco);
+        }
+        
+        if (dados.tipoCliente() != null) {
+            this.tipoCliente = dados.tipoCliente();
+        }
+        
+        if (dados.statusCliente() != null) {
+            this.statusCliente = dados.statusCliente();
+        }
     }
 
     public void adicionarHidrometro(Hidrometro hidrometro) {

@@ -1,16 +1,17 @@
 services:
-  mysql:
-    image: mysql:latest
-    container_name: fachada_mysql
+  postgres:
+    image: postgres
+    container_name: fachada_postgres
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql
 
 volumes:
-  mysql_data:
+  postgres_data:
     driver: local

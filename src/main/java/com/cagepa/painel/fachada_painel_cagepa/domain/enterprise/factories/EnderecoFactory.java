@@ -2,8 +2,11 @@ package com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.factories;
 
 import com.cagepa.painel.fachada_painel_cagepa.domain.application.dtos.input.DadosEnderecoInputDTO;
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.entities.Endereco;
-import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.factories.interfaces.IEnderecoFactory;
+import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.interfaces.IEnderecoFactory;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class EnderecoFactory implements IEnderecoFactory {
     @Override
     public Endereco criarEndereco(DadosEnderecoInputDTO dados) {

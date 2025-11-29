@@ -136,17 +136,4 @@ public class CpfCnpj {
     public String toString() {
         return formatado();
     }
-
-    @Override
-    public boolean equals(Object object) {
-        if (this == object) return true;
-        if (object == null || getClass() != object.getClass()) return false;
-        CpfCnpj that = (CpfCnpj) object;
-        return valor.equals(that.valor);
-    }
-
-    @Override
-    public int hashCode() {
-        return valor.hashCode();
-    }
 }

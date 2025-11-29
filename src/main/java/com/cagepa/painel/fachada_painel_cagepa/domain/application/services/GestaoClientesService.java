@@ -2,6 +2,10 @@ package com.cagepa.painel.fachada_painel_cagepa.domain.application.services;
 
 import java.util.List;
 
+import com.cagepa.painel.fachada_painel_cagepa.domain.application.repositories.IHidrometroRepository;
+import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.entities.Hidrometro;
+import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.enums.StatusHidrometro;
+import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.valueObjects.CpfCnpj;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +32,9 @@ public class GestaoClientesService {
     private IClienteRepository clienteRepository;
 
     @Autowired
+    private IHidrometroRepository hidrometroRepository;
+
+    @Autowired
     private ClienteValidator clienteValidator;
 
     @Autowired
@@ -49,7 +56,8 @@ public class GestaoClientesService {
 
     public Cliente consultar(String cpfCnpj) {
         clienteValidator.validarCpfCnpj(cpfCnpj);
-        return clienteRepository.findByCpfCnpjValor(cpfCnpj)
+        var cpfCnpjLimpo = CpfCnpj.create(cpfCnpj).getValor();
+        return clienteRepository.findByCpfCnpjValor(cpfCnpjLimpo)
                 .orElseThrow(() -> new RuntimeException("Cliente não encontrado com o CPF/CNPJ informado."));
     }
 
@@ -59,23 +67,34 @@ public class GestaoClientesService {
         return clienteRepository.salvar(cliente);
     }
 
+    /**
+     * Desativa logicamente um cliente.
+     */
     public boolean desativar(String cpfCnpj) {
         Cliente cliente = consultar(cpfCnpj);
+        
         cliente.setStatusCliente(StatusCliente.INATIVO);
         clienteRepository.salvar(cliente);
+        
+        List<Hidrometro> hidrometros = hidrometroRepository.findByClienteId(cliente.getId());
+        for (Hidrometro hidrometro : hidrometros) {
+            hidrometro.setStatus(StatusHidrometro.DESATIVADO);
+            hidrometroRepository.salvar(hidrometro);
+        }
+        
         return true;
     }
 
+    /*
+    * Filtro procura por nome, cpfCnpj ou id do Hidrometro
+    * */
     public List<Cliente> listar(String filtro) {
-        var clientes = clienteRepository.listar();
-
         if (filtro == null || filtro.isBlank()) {
-            return clientes;
+            return clienteRepository.listar();
         }
-
-        return clientes.stream()
-                .filter(c -> c.getNome().toLowerCase().contains(filtro.toLowerCase())
-                        || c.getCpfCnpj().getValor().contains(filtro))
-                .toList();
+        
+        String filtroLimpo = filtro.replaceAll("[.\\-/]", "").trim();
+        
+        return clienteRepository.buscarComFiltro(filtroLimpo);
     }
 }

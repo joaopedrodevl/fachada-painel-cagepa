@@ -2,28 +2,30 @@ package com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.entities;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.cagepa.painel.fachada_painel_cagepa.domain.application.dtos.input.DadosAtualizarHidrometroInputDTO;
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.enums.StatusHidrometro;
+import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.factories.EnderecoFactory;
 
 import jakarta.persistence.*;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-@Getter
-@Setter
-@EqualsAndHashCode
-@NoArgsConstructor
 @Entity
 @Table(name = "hidrometros")
+@Getter
+@Setter
+@EqualsAndHashCode(of = "idSha")
+@NoArgsConstructor
+@ToString(exclude = {"cliente", "enderecoInstalacao", "leituras"})
 public class Hidrometro {
     
     @Id
-    @Column(name = "numero_serie", length = 50)
-    private String id;
+    @Column(name = "id_sha", length = 50)
+    private String idSha;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "endereco_instalacao_id", nullable = false)
     private Endereco enderecoInstalacao;
 
@@ -56,6 +58,9 @@ public class Hidrometro {
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
+    @OneToMany(mappedBy = "hidrometro", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Leitura> leituras = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -67,5 +72,36 @@ public class Hidrometro {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Atualiza as informações do hidrômetro.
+     */
+    public void atualizarInformacoes(DadosAtualizarHidrometroInputDTO dados) {
+        if (dados.caminhoImagemSha() != null) {
+            this.caminhoImagemSHA = dados.caminhoImagemSha();
+        }
+        
+        if (dados.dataInstalacao() != null && this.dataInstalacao == null) {
+            this.dataInstalacao = dados.dataInstalacao();
+        } else if (dados.dataInstalacao() != null && this.dataInstalacao != null) {
+            throw new IllegalArgumentException("Data de instalação não pode ser alterada após ser definida.");
+        }
+        
+        if (dados.limiteConsumoMensalM3() != null) {
+            this.limiteConsumoMensalM3 = dados.limiteConsumoMensalM3();
+        }
+        
+        if (dados.limiteVazaoLMin() != null) {
+            this.limiteVazaoLMin = dados.limiteVazaoLMin();
+        }
+        
+        if (dados.enderecoInstalacao() != null) {
+            this.enderecoInstalacao = new EnderecoFactory().criarEndereco(dados.enderecoInstalacao());
+        }
+        
+        if (dados.status() != null) {
+            this.status = dados.status();
+        }
     }
 }

@@ -5,7 +5,8 @@ import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.valueObjects.Cp
 
 public record DadosCadastroClienteInputDTO(
     CpfCnpj cpfCnpj,
-    String nome,
+    String nome,              
+    String razaoSocial,       
     String email,
     String telefone,
     DadosEnderecoInputDTO endereco,

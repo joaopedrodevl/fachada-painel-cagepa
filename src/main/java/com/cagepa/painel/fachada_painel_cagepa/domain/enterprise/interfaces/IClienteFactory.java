@@ -1,4 +1,4 @@
-package com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.factories.interfaces;
+package com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.interfaces;
 
 import com.cagepa.painel.fachada_painel_cagepa.domain.application.dtos.input.DadosCadastroClienteInputDTO;
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.entities.Cliente;

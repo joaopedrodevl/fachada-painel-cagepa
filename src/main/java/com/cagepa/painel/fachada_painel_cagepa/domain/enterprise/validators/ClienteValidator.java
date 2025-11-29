@@ -1,6 +1,7 @@
 package com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.validators;
 
 import com.cagepa.painel.fachada_painel_cagepa.domain.application.dtos.input.DadosCadastroClienteInputDTO;
+import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.enums.TipoCliente;
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.enums.TipoEndereco;
 import com.cagepa.painel.fachada_painel_cagepa.domain.enterprise.valueObjects.CpfCnpj;
 
@@ -32,7 +33,65 @@ public class ClienteValidator {
             return false;
         }
         
-        return validarEmail(dados.email()) && validarNome(dados.nome()) && validarCpfCnpj(dados.cpfCnpj().getValor()) && validarTelefone(dados.telefone()) && enderecoValidator.validarEnderecoCompleto(dados.endereco().logradouro(), dados.endereco().numero(), dados.endereco().complemento(), dados.endereco().bairro(), dados.endereco().cidade(), dados.endereco().estado(), dados.endereco().cep(), dados.endereco().tipoEndereco().name()) && validarTipoCliente(dados.tipoCliente().name());
+        return validarEmail(dados.email()) 
+            && validarNome(dados.nome()) 
+            && validarCpfCnpj(dados.cpfCnpj().getValor()) 
+            && validarTelefone(dados.telefone()) 
+            && enderecoValidator.validarEnderecoCompleto(
+                dados.endereco().logradouro(), 
+                dados.endereco().numero(), 
+                dados.endereco().complemento(), 
+                dados.endereco().bairro(), 
+                dados.endereco().cidade(), 
+                dados.endereco().estado(), 
+                dados.endereco().cep(), 
+                dados.endereco().tipoEndereco().name()
+            ) 
+            && validarTipoCliente(dados.tipoCliente().name())
+            && validarTipoComDocumento(dados.cpfCnpj(), dados.tipoCliente())
+            && validarNomeComDocumento(dados.cpfCnpj(), dados.nome());
+    }
+
+    /**
+     * Valida se o tipo de cliente é compatível com o tipo de documento (CPF/CNPJ).
+     * - CPF não pode ser usado para cliente Industrial
+     * - CNPJ não pode ser usado para cliente Residencial
+     */
+    public boolean validarTipoComDocumento(CpfCnpj cpfCnpj, TipoCliente tipoCliente) {
+        if (cpfCnpj == null || tipoCliente == null) {
+            return false;
+        }
+
+        if (cpfCnpj.isCnpj() && tipoCliente == TipoCliente.RESIDENCIAL) {
+            throw new IllegalArgumentException("CNPJ não pode ser usado para cliente residencial");
+        }
+
+        if (cpfCnpj.isCpf() && tipoCliente == TipoCliente.INDUSTRIAL) {
+            throw new IllegalArgumentException("CPF não pode ser usado para cliente industrial");
+        }
+
+        return true;
+    }
+
+    /**
+     * Valida se os campos de nome estão preenchidos conforme o tipo de documento.
+     * - CPF: deve ter nome completo
+     * - CNPJ: deve ter nome fantasia (e opcionalmente razão social)
+     */
+    public boolean validarNomeComDocumento(CpfCnpj cpfCnpj, String nome) {
+        if (cpfCnpj == null) {
+            return false;
+        }
+
+        if (cpfCnpj.isCpf() && (nome == null || nome.trim().isEmpty())) {
+            throw new IllegalArgumentException("Nome completo é obrigatório para pessoa física (CPF)");
+        }
+        
+        if (cpfCnpj.isCnpj() && (nome == null || nome.trim().isEmpty())) {
+            throw new IllegalArgumentException("Nome fantasia é obrigatório para pessoa jurídica (CNPJ)");
+        }
+
+        return true;
     }
 
     public boolean validarTipoCliente(String tipoCliente) {
