@@ -5,12 +5,15 @@
 ### Progresso Geral - Changelog
 
 ```
-█░░░░░░░░░░░░░░░░░░░ 5% (Funcionalidades Core)
+██░░░░░░░░░░░░░░░░░░ 10% (Funcionalidades Core)
 ░░░░░░░░░░░░░░░░░░░░ 0% (Testes)
 ```
 
 #### [29/11/2025]
 - Cadastro de cliente implementado na fachada. Porém ainda falta a regra para só administradores conseguirem cadastrar um cliente.
+- 90% da implementação do subsistema de Gestão de Clientes concluída.
+- Implementado o padrão Factory Method para criação de Clientes e Endereços.
+- Início do desenvolvimento dos subsistemas de Monitoramento e OCR.
 
 #### [25/11/2025] 
 - Parcialmente implementado o subsistema de Gestão de Clientes, faltando as regras de negócio.
