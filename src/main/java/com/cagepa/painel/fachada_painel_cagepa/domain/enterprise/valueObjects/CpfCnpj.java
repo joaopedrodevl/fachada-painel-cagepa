@@ -8,19 +8,20 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.Setter;
 
 @Embeddable
 @Getter
-@Setter
 @EqualsAndHashCode
 public class CpfCnpj {
     @Column(name = "cpf_cnpj", nullable = false, unique = true, length = 14)
-    private final String valor;
+    private String valor;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_documento", nullable = false, length = 4)
-    private final TipoDocumento tipoDocumento;
+    private TipoDocumento tipoDocumento;
+
+    protected CpfCnpj() {
+    }
 
     private CpfCnpj(String valor, TipoDocumento tipoDocumento) {
         this.valor = valor;

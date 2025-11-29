@@ -16,6 +16,9 @@ public class Telefone {
 
     private static final Pattern TELEFONE_PATTERN = Pattern.compile("^\\d{10,11}$");
 
+    protected Telefone() {
+    }
+
     public Telefone(String valor) {
         this.valor = valor;
 

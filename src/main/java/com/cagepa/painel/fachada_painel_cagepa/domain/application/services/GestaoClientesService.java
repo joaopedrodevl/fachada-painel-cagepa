@@ -33,31 +33,40 @@ public class GestaoClientesService {
     @Autowired
     private ClienteFactory clienteFactory;
 
-    Cliente cadastrar(DadosCadastroClienteInputDTO cliente) {
-        clienteValidator.validarCadastro(cliente);
+    public Cliente cadastrar(DadosCadastroClienteInputDTO cliente) {
+        // Verifica se não tem o cliente com mesmo cpf ou cnpj cadastrado
+        clienteRepository.findByCpfCnpjValor(cliente.cpfCnpj().getValor())
+            .ifPresent(c -> {
+                throw new IllegalArgumentException("Já existe um cliente cadastrado com o CPF/CNPJ informado.");
+            });
+
+       if (!clienteValidator.validarCadastro(cliente)) {
+           throw new IllegalArgumentException("Dados do cliente inválidos. Verifique e tente novamente.");
+       }
+        
         return clienteRepository.salvar(clienteFactory.criarCliente(cliente));
     }
 
-    Cliente consultar(String cpfCnpj) {
+    public Cliente consultar(String cpfCnpj) {
         clienteValidator.validarCpfCnpj(cpfCnpj);
         return clienteRepository.findByCpfCnpjValor(cpfCnpj)
                 .orElseThrow(() -> new RuntimeException("Cliente não encontrado com o CPF/CNPJ informado."));
     }
 
-    Cliente atualizar(String cpfCnpj, DadosAtualizarClienteInputDTO dados) {
+    public Cliente atualizar(String cpfCnpj, DadosAtualizarClienteInputDTO dados) {
         Cliente cliente = consultar(cpfCnpj);
         cliente.atualizarInformacoes(dados);
         return clienteRepository.salvar(cliente);
     }
 
-    boolean desativar(String cpfCnpj) {
+    public boolean desativar(String cpfCnpj) {
         Cliente cliente = consultar(cpfCnpj);
         cliente.setStatusCliente(StatusCliente.INATIVO);
         clienteRepository.salvar(cliente);
         return true;
     }
 
-    List<Cliente> listar(String filtro) {
+    public List<Cliente> listar(String filtro) {
         var clientes = clienteRepository.listar();
 
         if (filtro == null || filtro.isBlank()) {

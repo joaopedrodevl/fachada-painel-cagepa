@@ -43,7 +43,7 @@ public class Cliente {
     @Embedded
     private Telefone telefone;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "endereco_id", nullable = false)
     private Endereco endereco;
 
