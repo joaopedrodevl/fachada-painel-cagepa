@@ -18,8 +18,6 @@ public class FachadaCagepaApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        System.out.println("Hello World");
-
         String token = painelCagepaFacade.authenticate("admin", "admin") ? "Token-Valido" : null;
         painelCagepaFacade.processarImagens(token);
     }
