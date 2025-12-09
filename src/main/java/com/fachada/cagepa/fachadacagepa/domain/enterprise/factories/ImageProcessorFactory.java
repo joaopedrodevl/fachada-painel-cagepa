@@ -14,13 +14,13 @@ public class ImageProcessorFactory {
     @Autowired
     private ColaboradorImageProcessor colaboradorImageProcessor;
 
-    public HidromeImageProcessor getProcessor(String fileName){
-        if (fileName.contains("prop") || fileName.startsWith("prop_")) {
+    public HidromeImageProcessor getProcessor(String fileName) throws Exception {
+        if (proprietarioImageProcessor.supports(fileName)) {
             return proprietarioImageProcessor;
-        } else if (fileName.contains("col") || fileName.startsWith("col_")) {
+        } else if (colaboradorImageProcessor.supports(fileName)) {
             return colaboradorImageProcessor;
         } else {
-            throw new IllegalArgumentException("Fonte de imagem desconhecida: " + fileName);
+            throw new IllegalArgumentException("Nenhum processador de imagem suportado para o arquivo: " + fileName);
         }
     }
 }
