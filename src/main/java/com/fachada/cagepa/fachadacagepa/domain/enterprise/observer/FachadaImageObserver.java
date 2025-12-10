@@ -2,8 +2,8 @@ package com.fachada.cagepa.fachadacagepa.domain.enterprise.observer;
 
 import com.fachada.cagepa.fachadacagepa.domain.application.services.LeituraHidrometroService;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.observer.interfaces.ImageObserver;
-import com.fachada.cagepa.fachadacagepa.facade.PainelCagepaFacade;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.nio.file.StandardWatchEventKinds;
@@ -17,6 +17,7 @@ public class FachadaImageObserver implements ImageObserver {
     }
 
     @Override
+    @Transactional
     public void onImageEvent(String imagePath, Object eventType) {
         try {
             if (eventType == StandardWatchEventKinds.ENTRY_CREATE) {
@@ -29,11 +30,30 @@ public class FachadaImageObserver implements ImageObserver {
                     return;
                 }
 
-                leituraHidrometroService.processImage(imagePath);
+                try {
+                    leituraHidrometroService.processImage(imagePath);
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Erro de argumento ao processar imagem: " + imagePath);
+                    System.err.println("Detalhes: " + e.getMessage());
+                } catch (IllegalStateException e) {
+                    System.err.println("Erro de estado ao processar imagem: " + imagePath);
+                    System.err.println("Detalhes: " + e.getMessage());
+                } catch (Exception e) {
+                    System.err.println("Erro ao processar imagem: " + imagePath);
+                    if (e.getMessage() != null && e.getMessage().contains("EntityManagerFactory is closed")) {
+                        System.err.println("EntityManager foi fechado. A aplicação pode estar encerrando.");
+                    } else {
+                        System.err.println("Detalhes: " + e.getMessage());
+                    }
+                }
             }
+        } catch (InterruptedException e) {
+            System.err.println("Thread interrompida ao processar imagem: " + imagePath);
+            System.err.println("Detalhes: " + e.getMessage());
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
-            System.err.println("Erro ao processar imagem via Observer: " + imagePath);
-            e.printStackTrace();
+            System.err.println("Erro inesperado no Observer: " + imagePath);
+            System.err.println("Detalhes: " + e.getMessage());
         }
     }
 }

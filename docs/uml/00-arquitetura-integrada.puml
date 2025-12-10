@@ -1,0 +1,185 @@
+@startuml Arquitetura Integrada - Fachada CAGEPA
+!define SUBSISTEMA_COLOR #E3F2FD
+!define FACADE_COLOR #FFF3E0
+!define INFRA_COLOR #F3E5F5
+
+skinparam packageBackgroundColor<<subsistema>> SUBSISTEMA_COLOR
+skinparam packageBackgroundColor<<fachada>> FACADE_COLOR
+skinparam packageBackgroundColor<<infra>> INFRA_COLOR
+
+
+package "Camada de Fachada (Proxy)" <<fachada>> {
+  interface ISecurePainelCagepaFacadeProxy {
+    +login(): String
+    +verificarToken(): boolean
+    +criarClientePF(): ClienteDTO
+    +criarClientePJ(): ClienteDTO
+    +registrarHidrometro(): HidrometroDTO
+    +obterConsumo*(): ConsumoClientePeriodoDTO
+    +verificarENotificarConsumoAlto(): void
+    +obterRelatorioNotificacoes(): String
+    +obterHistoricoAuditoria(): String
+  }
+
+  class SecurePainelCagepaFacadeProxy implements ISecurePainelCagepaFacadeProxy {
+    -painelCagepaFacade: PainelCagepaFacade
+    -jwtTokenProvider: JwtTokenProvider
+    +login(): String
+    +verificarToken(): boolean
+    -validarTokenParaOperacao(): void
+  }
+
+  class PainelCagepaFacade {
+    -clienteService: ClienteService
+    -hidrometroService: HidrometroService
+    -consumoService: ConsumoService
+    -notificacaoConsumoService: NotificacaoConsumoService
+    -auditoriaService: AuditoriaService
+    -configurationFacade: ConfigurationFacade
+  }
+}
+
+package "Subsistema 01 - Autenticação" <<subsistema>> {
+  class JwtTokenProvider
+  class Admin
+  interface IAdminJpaRepository
+}
+
+package "Subsistema 02 - Gestão de Clientes" <<subsistema>> {
+  class ClienteService
+  class Cliente
+  class Endereco
+  class ClienteValidator
+  interface IClienteJpaRepository
+}
+
+package "Subsistema 03 - Gestão de Hidrômetros" <<subsistema>> {
+  class HidrometroService
+  class Hidrometro
+  class LeituraHidrometro
+  class HidrometroValidator
+  interface IHidrometroJpaRepository
+}
+
+package "Subsistema 04 - Processamento de Imagens" <<subsistema>> {
+  class LeituraHidrometroService
+  class ImageWatcher
+  class FachadaImageObserver
+  interface HidromeImageProcessor
+  class TesseractImageProcessor
+  class ImageProcessorFactory
+  class LeituraHidrometroFactory
+}
+
+package "Subsistema 05 - Cálculo de Consumo" <<subsistema>> {
+  class ConsumoService
+  class ConsumoClientePeriodoDTO
+  interface ILeituraHidrometroRepository
+}
+
+package "Subsistema 06 - Notificações" <<subsistema>> {
+  class NotificacaoConsumoService
+  class ResendEmailNotificacaoStrategy
+  interface NotificacaoStrategy
+  class NotificacaoConsumo
+  class NotificacaoObserver
+}
+
+package "Subsistema 07 - Auditoria" <<subsistema>> {
+  class AuditoriaService
+  class AuditoriaLog
+  interface IAuditoriaRepository
+}
+
+package "Subsistema 08 - Validação" <<subsistema>> {
+  class ValidatorBuilder
+  class StringValidator
+  class CpfCnpjValidator
+  class EmailValidator
+  class ValidationException
+}
+
+package "Subsistema 09 - Configuração" <<subsistema>> {
+  class SystemConfiguration
+  class ConfigFileManager
+  class ConfigurationFacade
+  interface ITessDataPathAdapter
+}
+
+package "Camada de Persistência (BD)" <<infra>> {
+  database "PostgreSQL Database" {
+    entity "clientes"
+    entity "enderecos"
+    entity "hidrometros"
+    entity "leituras_hidrometro"
+    entity "admins"
+    entity "auditoria_logs"
+  }
+}
+
+SecurePainelCagepaFacadeProxy --> PainelCagepaFacade
+SecurePainelCagepaFacadeProxy --> JwtTokenProvider
+
+PainelCagepaFacade --> ClienteService
+PainelCagepaFacade --> HidrometroService
+PainelCagepaFacade --> ConsumoService
+PainelCagepaFacade --> NotificacaoConsumoService
+PainelCagepaFacade --> AuditoriaService
+PainelCagepaFacade --> ConfigurationFacade
+
+ClienteService --> ClienteValidator
+ClienteService --> IClienteJpaRepository
+ClienteService --> CpfCnpjValidator
+ClienteService --> EmailValidator
+
+HidrometroService --> HidrometroValidator
+HidrometroService --> IHidrometroJpaRepository
+
+ConsumoService --> ILeituraHidrometroRepository
+ConsumoService --> Cliente
+
+NotificacaoConsumoService --> NotificacaoStrategy
+NotificacaoConsumoService --> NotificacaoObserver
+NotificacaoConsumoService --> ConsumoService
+
+LeituraHidrometroService --> ImageProcessorFactory
+LeituraHidrometroService --> LeituraHidrometroFactory
+ImageWatcher --> FachadaImageObserver
+
+AuditoriaService --> IAuditoriaRepository
+
+ConfigurationFacade --> SystemConfiguration
+ConfigurationFacade --> ConfigFileManager
+ConfigurationFacade --> ITessDataPathAdapter
+
+IClienteJpaRepository --> clientes
+IClienteJpaRepository --> enderecos
+IHidrometroJpaRepository --> hidrometros
+ILeituraHidrometroRepository --> leituras_hidrometro
+IAdminJpaRepository --> admins
+IAuditoriaRepository --> auditoria_logs
+
+
+note bottom of SecurePainelCagepaFacadeProxy
+  **Padrão Proxy**
+  Protege acesso aos serviços
+  com autenticação JWT
+end note
+
+note bottom of PainelCagepaFacade
+  **Padrão Facade**
+  Fornece interface unificada para
+  todos os subsistemas
+end note
+
+note bottom of ValidatorBuilder
+  **Padrão Builder**
+  Constrói validadores de forma fluente
+end note
+
+note bottom of ImageProcessorFactory
+  **Padrão Factory**
+  Cria processadores de imagem apropriados
+end note
+
+@enduml

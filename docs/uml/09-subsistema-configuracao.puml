@@ -1,0 +1,83 @@
+@startuml Subsistema de Configuração
+!define ABSTRACT_COLOR #E1F5FF
+!define INTERFACE_COLOR #FFF3E0
+!define CLASS_COLOR #F3E5F5
+!define DTO_COLOR #E8F5E9
+
+skinparam classBackgroundColor<<abstract>> ABSTRACT_COLOR
+skinparam classBackgroundColor<<interface>> INTERFACE_COLOR
+skinparam classBackgroundColor<<dto>> DTO_COLOR
+
+package "Configuração do Sistema" {
+
+  class SystemConfiguration {
+    -diretorioImagensCompartilhadas: String
+    -tessDataPath: String
+    -versaoTesseract: String
+    +getDiretorioImagensCompartilhadas(): String
+    +setDiretorioImagensCompartilhadas(path: String): void
+    +getTessDataPath(): String
+    +setTessDataPath(path: String): void
+  }
+
+  class ConfigFileManager {
+    -configFilePath: String
+    -properties: Properties
+    +carregarConfig(): void
+    +salvarConfig(): void
+    +obterPropriedade(chave: String): String
+    +definirPropriedade(chave: String, valor: String): void
+    -validarCaminhos(): void
+  }
+
+  interface ITessDataPathAdapter <<interface>> {
+    +obterCaminhoTessData(versao: String): String
+    +validarCaminhoTessData(caminho: String): boolean
+  }
+
+  class TessDataPathAdapter implements ITessDataPathAdapter {
+    +obterCaminhoTessData(versao: String): String
+    +validarCaminhoTessData(caminho: String): boolean
+    -detectarSistemaOperacional(): String
+    -montarCaminhoWindows(versao: String): String
+    -montarCaminhoLinux(versao: String): String
+  }
+
+  class TessDataPathFactory {
+    +{static} criarAdapter(): ITessDataPathAdapter
+    +{static} criarAdapterComVersao(versao: String): ITessDataPathAdapter
+  }
+
+  class ConfigurationFacade {
+    -systemConfiguration: SystemConfiguration
+    -configFileManager: ConfigFileManager
+    -tessDataPathFactory: TessDataPathFactory
+    +exibirConfiguracaoAtual(): String
+    +configurarDiretorioImagens(caminho: String): boolean
+    +configurarCaminhoTesseract(caminho: String): boolean
+    +validarConfiguracoes(): List<String>
+  }
+
+  SystemConfiguration --> ConfigFileManager
+  ConfigurationFacade --> SystemConfiguration
+  ConfigurationFacade --> ConfigFileManager
+  ConfigurationFacade --> ITessDataPathAdapter
+  TessDataPathFactory --> ITessDataPathAdapter
+  TessDataPathAdapter --|> ITessDataPathAdapter
+}
+
+note right of SystemConfiguration
+  Armazena as configurações do sistema
+  como diretório de imagens e path do Tesseract
+end note
+
+note right of ConfigFileManager
+  Gerencia leitura/escrita das
+  configurações em arquivo .config
+end note
+
+note right of TessDataPathAdapter
+  Adapter Pattern para abstrair
+  diferenças de SO (Windows/Linux)
+end note
+

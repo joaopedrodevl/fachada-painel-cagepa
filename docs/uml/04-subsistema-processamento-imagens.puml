@@ -1,0 +1,104 @@
+@startuml Subsistema de Processamento de Imagens
+!define ABSTRACT_COLOR #E1F5FF
+!define INTERFACE_COLOR #FFF3E0
+!define CLASS_COLOR #F3E5F5
+!define DTO_COLOR #E8F5E9
+
+skinparam classBackgroundColor<<abstract>> ABSTRACT_COLOR
+skinparam classBackgroundColor<<interface>> INTERFACE_COLOR
+skinparam classBackgroundColor<<dto>> DTO_COLOR
+
+package "Processamento de Imagens" {
+
+  class LeituraHidrometroService {
+    -leituraHidrometroRepository: LeituraHidrometroRepositoryImpl
+    -processorFactory: ImageProcessorFactory
+    -leituraHidrometroFactory: LeituraHidrometroFactory
+    -hidrometroJpaRepository: IHidrometroJpaRepository
+    +salvarLeitura(leitura: LeituraHidrometro): void
+    +processImage(imagePath: String): void
+    -getShaIdFromImagePath(imagePath: String): String
+  }
+
+  class ImageWatcher {
+    -watchService: WatchService
+    -leituraHidrometroService: LeituraHidrometroService
+    +startWatching(directoryPath: String): void
+    +stopWatching(): void
+  }
+
+  class FachadaImageObserver {
+    -leituraHidrometroService: LeituraHidrometroService
+    +onImageEvent(event: ImageEvent): void
+  }
+
+  interface HidromeImageProcessor <<interface>> {
+    +extractReading(imagePath: String): String
+  }
+
+  class TesseractImageProcessor implements HidromeImageProcessor {
+    -tessDataPath: String
+    -version: String
+    +extractReading(imagePath: String): String
+    -preprocessImage(imagePath: String): BufferedImage
+    -extractTextFromImage(image: BufferedImage): String
+  }
+
+  class MockImageProcessor implements HidromeImageProcessor {
+    +extractReading(imagePath: String): String
+  }
+
+  class ImageProcessorFactory {
+    -tesseractPath: String
+    -version: String
+    +getProcessor(imagePath: String): HidromeImageProcessor
+    -detectImageType(imagePath: String): String
+  }
+
+  class LeituraHidrometroFactory {
+    +criar(idSha: String, valor: String): LeituraHidrometro
+    -parseValor(valorString: String): Integer
+  }
+
+  class LeituraHidrometro {
+    -id: Long
+    -hidrometroId: String
+    -valor: Integer
+    -dataLeitura: LocalDateTime
+    -status: StatusLeitura
+  }
+
+  ImageWatcher --> FachadaImageObserver
+  ImageWatcher --> ImageEvent
+  FachadaImageObserver --> LeituraHidrometroService
+  LeituraHidrometroService --> ImageProcessorFactory
+  LeituraHidrometroService --> LeituraHidrometroFactory
+  ImageProcessorFactory --> HidromeImageProcessor
+  TesseractImageProcessor --|> HidromeImageProcessor
+  MockImageProcessor --|> HidromeImageProcessor
+  LeituraHidrometroFactory --> LeituraHidrometro
+
+  class ImageEvent {
+    -imagePath: String
+    -timestamp: LocalDateTime
+    -eventType: String
+  }
+}
+
+note right of ImageWatcher
+  Monitora um diretório procurando
+  por novas imagens de hidrômetros
+  usando Java NIO WatchService
+end note
+
+note right of TesseractImageProcessor
+  Extrai números das imagens
+  usando OCR com Tesseract
+end note
+
+note right of ImageProcessorFactory
+  Factory Pattern para criar
+  processadores apropriados
+end note
+
+@enduml

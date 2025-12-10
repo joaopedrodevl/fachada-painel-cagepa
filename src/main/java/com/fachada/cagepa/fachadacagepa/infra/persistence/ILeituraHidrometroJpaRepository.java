@@ -7,6 +7,7 @@ import java.util.List;
 
 @Repository
 public interface ILeituraHidrometroJpaRepository extends JpaRepository<LeituraHidrometro, Long> {
-    List<LeituraHidrometro> findByClienteId(String clienteId);
+    List<LeituraHidrometro> findByHidrometroIdSha(String idSha);
+    LeituraHidrometro findTopByHidrometroIdShaOrderByDataLeituraDesc(String idSha);
 }
 

@@ -1,0 +1,113 @@
+@startuml Casos de Uso - Integração via UI Web
+
+!define USUARIO_COLOR #E1F5FF
+!define BROWSER_COLOR #FFF3E0
+!define SERVIDOR_COLOR #F3E5F5
+
+actor "Usuário Web" as UsuarioWeb
+
+usecase "UC01: Acessar Página\nde Login" as UC01
+usecase "UC02: Preencher Credenciais\nno Formulário" as UC02
+usecase "UC03: Enviar POST\n/api/fachada/auth/login" as UC03
+usecase "UC04: Receber Token JWT" as UC04
+usecase "UC05: Armazenar Token\nno localStorage/sessionStorage" as UC05
+usecase "UC06: Redirecionar\npara Dashboard" as UC06
+
+usecase "UC07: Usuário Interage\ncom Interface" as UC07
+usecase "UC08: Frontend Prepara\nRequisição" as UC08
+usecase "UC09: Adiciona Token\nno Header" as UC09
+usecase "UC10: Envia Requisição\nHTTP/HTTPS" as UC10
+usecase "UC11: Backend Valida\nToken" as UC11
+usecase "UC12: Executa Operação" as UC12
+usecase "UC13: Retorna JSON\ncom Resultado" as UC13
+usecase "UC14: Frontend Atualiza\nUI com Dados" as UC14
+
+usecase "UC15: Listar Clientes\nem Tabela" as UC15
+usecase "UC16: Abrir Modal\nCadastro Cliente" as UC16
+usecase "UC17: Preencher Formulário\n(PF ou PJ)" as UC17
+usecase "UC18: Enviar Dados\nao Backend" as UC18
+usecase "UC19: Exibir Mensagem\nde Sucesso" as UC19
+usecase "UC20: Atualizar Listagem" as UC20
+
+usecase "UC21: Listar Hidrômetros\ndo Cliente" as UC21
+usecase "UC22: Registrar Novo\nHidrômetro" as UC22
+usecase "UC23: Atualizar Status\nHidrômetro" as UC23
+
+usecase "UC24: Selecionar Cliente" as UC24
+usecase "UC25: Selecionar Período\n(Dia/Sem/Mês/Ano)" as UC25
+usecase "UC26: Gráfico de Consumo\nAtualizado" as UC26
+usecase "UC27: Tabela com\nDetalhes por Hidrômetro" as UC27
+
+usecase "UC28: Visualizar Histórico\nAuditoria" as UC28
+usecase "UC29: Visualizar Notificações\nEnviadas" as UC29
+usecase "UC30: Configurar Sistema\n(Admin Only)" as UC30
+
+UsuarioWeb --> UC01
+UC01 --> UC02
+UC02 --> UC03
+UC03 --> UC04
+UC04 --> UC05
+UC05 --> UC06
+
+UsuarioWeb --> UC07
+UC07 --> UC08
+UC08 --> UC09
+UC09 --> UC10
+UC10 --> UC11
+UC11 --> UC12
+UC12 --> UC13
+UC13 --> UC14
+
+UC07 --> UC15
+UC07 --> UC16
+UC07 --> UC21
+UC07 --> UC24
+UC07 --> UC28
+
+UC15 --> UC08
+UC16 --> UC17
+UC17 --> UC18
+UC18 --> UC08
+UC19 --> UC14
+UC20 --> UC14
+
+UC21 --> UC08
+UC22 --> UC08
+UC23 --> UC08
+
+UC24 --> UC25
+UC25 --> UC08
+UC26 --> UC14
+UC27 --> UC14
+
+UC28 --> UC08
+UC29 --> UC08
+UC30 --> UC08
+
+note right of UC05
+  localStorage para
+  persistência entre
+  abas/refresh
+  ou sessionStorage para
+  sessão única
+end note
+
+note right of UC09
+  Authorization: Bearer {token}
+  Content-Type: application/json
+  Accept: application/json
+end note
+
+note right of UC26
+  Renderiza gráficos com
+  Chart.js / D3.js / ApexCharts
+end note
+
+note right of UC30
+  Requer verificação
+  de permissão Admin
+  no Frontend e Backend
+end note
+
+@enduml
+

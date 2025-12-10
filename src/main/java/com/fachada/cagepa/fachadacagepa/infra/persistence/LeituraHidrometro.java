@@ -18,8 +18,9 @@ public class LeituraHidrometro {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "cliente_id")
-    private String clienteId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hidrometro_id", nullable = false)
+    private Hidrometro hidrometro;
 
     @Column(name = "valor")
     private int valor;

@@ -1,0 +1,104 @@
+@startuml Subsistema de Gestão de Hidrômetros
+!define ABSTRACT_COLOR #E1F5FF
+!define INTERFACE_COLOR #FFF3E0
+!define CLASS_COLOR #F3E5F5
+!define DTO_COLOR #E8F5E9
+
+skinparam classBackgroundColor<<abstract>> ABSTRACT_COLOR
+skinparam classBackgroundColor<<interface>> INTERFACE_COLOR
+skinparam classBackgroundColor<<dto>> DTO_COLOR
+
+package "Gestão de Hidrômetros" {
+
+  class HidrometroService {
+    -hidrometroJpaRepository: IHidrometroJpaRepository
+    -clienteJpaRepository: IClienteJpaRepository
+    -enderecoJpaRepository: IEnderecoJpaRepository
+    -validator: HidrometroValidator
+    +registrarHidrometro(idSha, cliente, endereco, limite): HidrometroDTO
+    +obterHidrometro(idSha: String): Optional<Hidrometro>
+    +atualizarHidrometro(hidrometro): HidrometroDTO
+    +atualizarStatusHidrometro(idSha, status): void
+    +listarHidrometrosDoCliente(cpfCnpj): List<HidrometroDTO>
+  }
+
+  class Hidrometro {
+    -id: Long
+    -idSha: String
+    -cliente: Cliente
+    -enderecoInstalacao: Endereco
+    -statusHidrometro: StatusHidrometro
+    -limiteConsumoMensalM3: Integer
+    -dataInstalacao: LocalDate
+    -leituras: List<LeituraHidrometro>
+    -criadoEm: LocalDateTime
+    -atualizadoEm: LocalDateTime
+  }
+
+  enum StatusHidrometro {
+    ATIVO
+    INATIVO
+    DEFEITUOSO
+    EM_MANUTENCAO
+  }
+
+  class LeituraHidrometro {
+    -id: Long
+    -hidrometro: Hidrometro
+    -valor: Integer
+    -dataLeitura: LocalDateTime
+    -statusLeitura: StatusLeitura
+  }
+
+  enum StatusLeitura {
+    NORMAL
+    SUSPEITA
+    CORRIGIDA
+    REJEITADA
+  }
+
+  interface IHidrometroJpaRepository <<interface>> {
+    +findById(idSha: String): Optional<Hidrometro>
+    +findAll(): List<Hidrometro>
+  }
+
+  interface ILeituraHidrometroJpaRepository <<interface>> {
+    +findTopByHidrometroIdShaOrderByDataLeituraDesc(idSha: String): LeituraHidrometro
+  }
+
+  class HidrometroValidator {
+    -cpfCnpjValidator: CpfCnpjValidator
+    +validarRegistro(idSha, cliente, endereco): void
+    +validarLimite(limite: Integer): void
+    +validarIdSha(idSha: String): void
+  }
+
+  class HidrometroDTO <<dto>> {
+    +idSha(): String
+    +status(): String
+    +limite(): Integer
+    +dataInstalacao(): LocalDate
+  }
+
+  HidrometroService --> IHidrometroJpaRepository
+  HidrometroService --> ILeituraHidrometroJpaRepository
+  HidrometroService --> HidrometroValidator
+  HidrometroService --> HidrometroDTO
+  Hidrometro --> StatusHidrometro
+  Hidrometro --> LeituraHidrometro
+  Hidrometro --> Cliente
+  Hidrometro --> Endereco
+  LeituraHidrometro --> StatusLeitura
+}
+
+note right of HidrometroService
+  Gerencia registro, atualização e
+  consulta de hidrômetros dos clientes
+end note
+
+note right of Hidrometro
+  Representa um medidor de água
+  com histórico de leituras
+end note
+
+@enduml

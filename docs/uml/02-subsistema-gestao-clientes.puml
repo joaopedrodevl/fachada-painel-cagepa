@@ -1,0 +1,117 @@
+@startuml Subsistema de Gestão de Clientes
+!define ABSTRACT_COLOR #E1F5FF
+!define INTERFACE_COLOR #FFF3E0
+!define CLASS_COLOR #F3E5F5
+!define DTO_COLOR #E8F5E9
+
+skinparam classBackgroundColor<<abstract>> ABSTRACT_COLOR
+skinparam classBackgroundColor<<interface>> INTERFACE_COLOR
+skinparam classBackgroundColor<<dto>> DTO_COLOR
+
+package "Gestão de Clientes" {
+
+  class ClienteService {
+    -clienteJpaRepository: IClienteJpaRepository
+    -enderecoJpaRepository: IEnderecoJpaRepository
+    -validator: ClienteValidator
+    +criarClientePF(cpf, nome, email, ...): ClienteDTO
+    +criarClientePJ(cnpj, nomeFantasia, razaoSocial, ...): ClienteDTO
+    +obterClientePorCpfCnpj(cpfCnpj: String): Optional<Cliente>
+    +atualizarCliente(cliente: Cliente): ClienteDTO
+    +deletarCliente(id: Long): boolean
+  }
+
+  enum TipoCliente {
+    RESIDENCIAL
+    COMERCIAL
+    INDUSTRIAL
+  }
+
+  class Cliente {
+    -id: Long
+    -cpfCnpj: String
+    -nomeCompleto: String
+    -nomeFantasia: String
+    -razaoSocial: String
+    -email: String
+    -telefone: String
+    -tipoCliente: TipoCliente
+    -statusCliente: StatusCliente
+    -enderecos: List<Endereco>
+    -hidrometros: List<Hidrometro>
+    -criadoEm: LocalDateTime
+    -atualizadoEm: LocalDateTime
+  }
+
+  class Endereco {
+    -id: Long
+    -logradouro: String
+    -numero: String
+    -complemento: String
+    -bairro: String
+    -cidade: String
+    -estado: String
+    -cep: String
+    -tipoEndereco: TipoEndereco
+    -cliente: Cliente
+  }
+
+  enum StatusCliente {
+    ATIVO
+    INATIVO
+    BLOQUEADO
+  }
+
+  enum TipoEndereco {
+    RESIDENCIAL
+    COMERCIAL
+    CORRESPONDENCIA
+  }
+
+  interface IClienteJpaRepository <<interface>> {
+    +findByCpfCnpj(cpfCnpj: String): Optional<Cliente>
+    +findAll(): List<Cliente>
+  }
+
+  interface IEnderecoJpaRepository <<interface>> {
+    +findByCliente(cliente: Cliente): List<Endereco>
+  }
+
+  class ClienteValidator {
+    -cpfCnpjValidator: CpfCnpjValidator
+    -emailValidator: EmailValidator
+    +validarClientePF(cpf, nome, email): void
+    +validarClientePJ(cnpj, razaoSocial): void
+    +validarEndereco(endereco): void
+  }
+
+  class ClienteDTO <<dto>> {
+    +cpf(): String
+    +cnpj(): String
+    +nome(): String
+    +email(): String
+    +telefone(): String
+  }
+
+  ClienteService --> IClienteJpaRepository
+  ClienteService --> IEnderecoJpaRepository
+  ClienteService --> ClienteValidator
+  ClienteService --> ClienteDTO
+  Cliente --> Endereco
+  Cliente --> TipoCliente
+  Cliente --> StatusCliente
+  Endereco --> TipoEndereco
+  Endereco --> Cliente
+}
+
+note right of ClienteService
+  Gerencia operações CRUD de clientes
+  e seus endereços com validação completa
+end note
+
+note right of ClienteValidator
+  Valida dados de clientes (PF e PJ)
+  usando padrão Strategy para validações
+end note
+
+@enduml

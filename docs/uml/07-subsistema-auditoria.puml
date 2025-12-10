@@ -1,0 +1,85 @@
+@startuml Subsistema de Auditoria
+!define ABSTRACT_COLOR #E1F5FF
+!define INTERFACE_COLOR #FFF3E0
+!define CLASS_COLOR #F3E5F5
+!define DTO_COLOR #E8F5E9
+
+skinparam classBackgroundColor<<abstract>> ABSTRACT_COLOR
+skinparam classBackgroundColor<<interface>> INTERFACE_COLOR
+skinparam classBackgroundColor<<dto>> DTO_COLOR
+
+package "Auditoria" {
+
+  class AuditoriaService {
+    -auditoriaRepository: IAuditoriaRepository
+    -logger: Logger
+    +registrarOperacao(operacao: Operacao, usuario: String, detalhes: String): void
+    +obterHistorico(): List<AuditoriaLog>
+    +obterHistoricoPorUsuario(usuario: String): List<AuditoriaLog>
+    +obterHistoricoPorPeriodo(dataInicio, dataFim): List<AuditoriaLog>
+    +limparHistorico(): void
+  }
+
+  class AuditoriaLog {
+    -id: Long
+    -operacao: String
+    -usuario: String
+    -detalhes: String
+    -dataOperacao: LocalDateTime
+    -ipOrigem: String
+    -resultado: String
+  }
+
+  enum TipoOperacao {
+    CRIAR_CLIENTE
+    ATUALIZAR_CLIENTE
+    DELETAR_CLIENTE
+    REGISTRAR_HIDROMETRO
+    ATUALIZAR_HIDROMETRO
+    PROCESSAR_IMAGEM
+    GERAR_RELATORIO
+    LOGIN_ADMIN
+    ALTERAR_CONFIGURACAO
+    ENVIAR_NOTIFICACAO
+  }
+
+  interface IAuditoriaRepository <<interface>> {
+    +salvar(log: AuditoriaLog): void
+    +obterTodos(): List<AuditoriaLog>
+    +obterPorUsuario(usuario: String): List<AuditoriaLog>
+    +limpar(): void
+  }
+
+  class AuditoriaRepositoryImpl implements IAuditoriaRepository {
+    -auditoriaJpaRepository: IAuditoriaJpaRepository
+    +salvar(log: AuditoriaLog): void
+    +obterTodos(): List<AuditoriaLog>
+    +obterPorUsuario(usuario: String): List<AuditoriaLog>
+    +limpar(): void
+  }
+
+  class LoggerUtil {
+    -logger: Logger
+    +logOperacao(operacao: String, detalhes: String): void
+    +logErro(erro: String, exception: Exception): void
+    +logAviso(aviso: String): void
+  }
+
+  AuditoriaService --> IAuditoriaRepository
+  AuditoriaService --> TipoOperacao
+  AuditoriaService --> LoggerUtil
+  AuditoriaRepositoryImpl --> AuditoriaLog
+}
+
+note right of AuditoriaService
+  Registra todas as operações importantes
+  da aplicação para fins de auditoria
+  e segurança
+end note
+
+note right of AuditoriaLog
+  Armazena informações detalhadas
+  de cada operação realizada
+end note
+
+@enduml

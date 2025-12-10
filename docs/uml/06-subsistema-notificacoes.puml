@@ -1,0 +1,88 @@
+@startuml Subsistema de Notificações
+!define ABSTRACT_COLOR #E1F5FF
+!define INTERFACE_COLOR #FFF3E0
+!define CLASS_COLOR #F3E5F5
+!define DTO_COLOR #E8F5E9
+
+skinparam classBackgroundColor<<abstract>> ABSTRACT_COLOR
+skinparam classBackgroundColor<<interface>> INTERFACE_COLOR
+skinparam classBackgroundColor<<dto>> DTO_COLOR
+
+package "Notificações" {
+
+  class NotificacaoConsumoService {
+    -hidrometroRepository: IHidrometroJpaRepository
+    -consumoService: ConsumoService
+    -notificacaoStrategy: NotificacaoStrategy
+    -notificacaoObserver: NotificacaoObserver
+    -consumoLimiarStrategy: ConsumoLimiarStrategy
+    +verificarENotificarConsumoAlto(): void
+    +obterRelatorioNotificacoes(): String
+    +getNotificacaoObserver(): NotificacaoObserver
+  }
+
+  interface NotificacaoStrategy <<interface>> {
+    +enviarNotificacao(notificacao: NotificacaoConsumo): boolean
+  }
+
+  class ResendEmailNotificacaoStrategy implements NotificacaoStrategy {
+    -resendApiKey: String
+    -emailFrom: String
+    +enviarNotificacao(notificacao: NotificacaoConsumo): boolean
+    -gerarHtmlEmail(notificacao: NotificacaoConsumo): String
+  }
+
+  class NotificacaoConsumo {
+    -id: String
+    -clienteNome: String
+    -clienteEmail: String
+    -hidrometroId: String
+    -consumoAtual: Double
+    -limiteConsumo: Integer
+    -percentualConsumo: Double
+    -status: String
+    -dataNotificacao: String
+  }
+
+  class NotificacaoObserver {
+    -notificacoesEnviadas: List<NotificacaoConsumo>
+    +registrarNotificacao(notificacao: NotificacaoConsumo): void
+    +obterNotificacoes(): List<NotificacaoConsumo>
+    +obterNotificacoesDoCliente(email: String): List<NotificacaoConsumo>
+    +obterNotificacoesComSucesso(): List<NotificacaoConsumo>
+    +getTotalNotificacoes(): int
+    +getTotalNotificacoesEnviadas(): int
+  }
+
+  class ConsumoLimiarStrategy {
+    -limiarPercentual: double
+    +deveCautivar(percentualConsumo: double): boolean
+    +getLimiarPercentual(): double
+    +setLimiarPercentual(novoLimiar: double): void
+  }
+
+  NotificacaoConsumoService --> NotificacaoStrategy
+  NotificacaoConsumoService --> NotificacaoObserver
+  NotificacaoConsumoService --> ConsumoLimiarStrategy
+  ResendEmailNotificacaoStrategy --> NotificacaoConsumo
+  NotificacaoObserver --> NotificacaoConsumo
+}
+
+note right of NotificacaoConsumoService
+  Verifica consumo mensal de clientes
+  e envia notificações automáticas
+  quando atinge 70% do limite
+end note
+
+note right of ResendEmailNotificacaoStrategy
+  Implementação de envio de emails
+  usando a API do Resend com HTML
+  formatado e responsivo
+end note
+
+note right of ConsumoLimiarStrategy
+  Strategy Pattern para determinar
+  quando enviar notificação (limiar configurável)
+end note
+
+@enduml

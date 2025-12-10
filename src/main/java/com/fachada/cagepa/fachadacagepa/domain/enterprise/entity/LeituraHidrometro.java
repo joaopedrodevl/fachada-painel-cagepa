@@ -1,6 +1,7 @@
 package com.fachada.cagepa.fachadacagepa.domain.enterprise.entity;
 
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.StatusLeituraHidrometro;
+import com.fachada.cagepa.fachadacagepa.infra.persistence.Hidrometro;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -8,16 +9,16 @@ import java.time.LocalDateTime;
 
 @Getter
 public class LeituraHidrometro {
-    private String clienteId;
+    private String hidrometroId;
     private Integer valor;
     private LocalDateTime dataLeitura;
     private StatusLeituraHidrometro status;
 
-    public LeituraHidrometro(String clienteId, String valorLido, LocalDateTime dataLeitura) {
-       if (clienteId == null || clienteId.trim().isEmpty()) {
-            throw new IllegalArgumentException("Cliente ID é obrigatório.");
+    public LeituraHidrometro(String hidrometroId, String valorLido, LocalDateTime dataLeitura) {
+       if (hidrometroId == null || hidrometroId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Hidrometro ID é obrigatório.");
         }
-        this.clienteId = clienteId;
+        this.hidrometroId = hidrometroId;
 
        if (valorLido == null || !valorLido.matches("\\d+")) {
            assert valorLido != null;

@@ -1,18 +1,19 @@
 package com.fachada.cagepa.fachadacagepa.config;
 
-import java.io.File;
 import java.io.IOException;
 
 public class SystemConfiguration {
     private static SystemConfiguration instance;
     private String imageDirectory;
     private String tessDataPath;
+    private String osType;
+    private ConfigFileManager configManager;
 
     private SystemConfiguration() throws IOException {
-        File file = new File("/home/apolo/Documents/diretorio_compartilhado_shas");
-        this.imageDirectory = file.getCanonicalPath();
-        // Caminho do Tesseract (ajuste conforme sua versão do Ubuntu)
-        this.tessDataPath = "/usr/share/tesseract-ocr/5/tessdata";
+        this.configManager = new ConfigFileManager();
+        this.imageDirectory = configManager.getImageDirectory();
+        this.tessDataPath = configManager.getTessDataPath();
+        this.osType = TessDataPathFactory.detectOS();
     }
 
     public synchronized static SystemConfiguration getInstance() throws IOException {
@@ -22,6 +23,25 @@ public class SystemConfiguration {
         return instance;
     }
 
-    public String getImageDirectory() { return imageDirectory; }
-    public String getTessDataPath() { return tessDataPath; }
+    public String getImageDirectory() {
+        return imageDirectory;
+    }
+
+    public String getTessDataPath() {
+        return tessDataPath;
+    }
+
+    public String getOsType() {
+        return osType;
+    }
+
+    public void setImageDirectory(String imageDirectory) throws IOException {
+        configManager.setImageDirectory(imageDirectory);
+        this.imageDirectory = imageDirectory;
+    }
+
+    public void setTessDataPath(String tessDataPath) throws IOException {
+        configManager.setTessDataPath(tessDataPath);
+        this.tessDataPath = tessDataPath;
+    }
 }

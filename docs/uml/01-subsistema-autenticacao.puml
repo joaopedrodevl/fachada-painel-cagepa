@@ -1,0 +1,108 @@
+@startuml Subsistema de Autenticação e Autorização
+!define ABSTRACT_COLOR #E1F5FF
+!define INTERFACE_COLOR #FFF3E0
+!define CLASS_COLOR #F3E5F5
+!define DTO_COLOR #E8F5E9
+
+skinparam classBackgroundColor<<abstract>> ABSTRACT_COLOR
+skinparam classBackgroundColor<<interface>> INTERFACE_COLOR
+skinparam classBackgroundColor<<dto>> DTO_COLOR
+
+package "Autenticação e Autorização" {
+
+  interface ISecurePainelCagepaFacadeProxy <<interface>> {
+    +login(username: String, password: String): String
+    +verificarToken(token: String): boolean
+    +criarAdmin(token: String, username: String, password: String): boolean
+  }
+
+  class SecurePainelCagepaFacadeProxy {
+    -painelCagepaFacade: PainelCagepaFacade
+    -jwtTokenProvider: JwtTokenProvider
+    -adminJpaRepository: IAdminJpaRepository
+    -adminValidator: AdminValidator
+    -auditLogger: AuditLoggerService
+    +login(username: String, password: String): String
+    +verificarToken(token: String): boolean
+    +criarAdmin(token: String, username: String, password: String): boolean
+    -validarTokenParaOperacao(token: String): void
+  }
+
+  class JwtTokenProvider {
+    -secretKey: String
+    -expirationMs: long
+    +generateToken(username: String): String
+    +validateToken(token: String): boolean
+    +getUsernameFromToken(token: String): String
+    +getExpirationFromToken(token: String): Date
+  }
+
+  class Admin {
+    -id: Long
+    -username: String
+    -password: String
+    -criadoEm: LocalDateTime
+    -atualizadoEm: LocalDateTime
+  }
+
+  interface IAdminJpaRepository <<interface>> {
+    +findByUsername(username: String): Optional<Admin>
+  }
+
+  class AdminJpaRepositoryImpl {
+    +findByUsername(username: String): Optional<Admin>
+  }
+
+  class AdminValidator {
+    +validate(admin: AdminDTO): void
+    +isValid(admin: AdminDTO): boolean
+    -validateUsername(username: String): void
+    -validatePassword(password: String): void
+  }
+
+  class AdminDTO <<dto>> {
+    -username: String
+    -password: String
+  }
+
+  class AuditLoggerService {
+    +logAcesso(username: String, tipo: String): void
+    +logAviso(username: String, tipo: String, msg: String): void
+    +logErro(username: String, tipo: String, msg: String, detalhe: String): void
+  }
+
+  SecurePainelCagepaFacadeProxy ..|> ISecurePainelCagepaFacadeProxy
+  SecurePainelCagepaFacadeProxy --> JwtTokenProvider
+  SecurePainelCagepaFacadeProxy --> IAdminJpaRepository
+  SecurePainelCagepaFacadeProxy --> AdminValidator
+  SecurePainelCagepaFacadeProxy --> AuditLoggerService
+  AdminJpaRepositoryImpl ..|> IAdminJpaRepository
+  AdminJpaRepositoryImpl --> Admin
+  AdminValidator --> AdminDTO
+}
+
+note right of SecurePainelCagepaFacadeProxy
+  Implementa o padrão Proxy para
+  proteger operações com autenticação
+  e autorização baseada em JWT
+end note
+
+note right of AdminValidator
+  Valida username (3-50 chars, sem espaços)
+  e password (8-128 chars, maiúscula,
+  minúscula, número, caractere especial)
+end note
+
+note right of AuditLoggerService
+  Registra tentativas de login,
+  criação de admin e operações
+  em tabela de auditoria
+end note
+
+note right of JwtTokenProvider
+  Gerencia a criação, validação e
+  extração de informações de tokens JWT
+  com expiração de 1 hora
+end note
+
+@enduml

@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Component
 public class LeituraHidrometroFactory {
-    public LeituraHidrometro criar(String clienteId, String valorLido) {
-        return new LeituraHidrometro(clienteId, valorLido, LocalDateTime.now());
+    public LeituraHidrometro criar(String shaId, String valorLido) {
+        return new LeituraHidrometro(shaId, valorLido, LocalDateTime.now());
     }
 }

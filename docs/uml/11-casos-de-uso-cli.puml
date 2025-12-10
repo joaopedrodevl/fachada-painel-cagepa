@@ -1,0 +1,69 @@
+@startuml Casos de Uso - Integração via CLI
+
+!define INTEGRADOR_COLOR #E1F5FF
+!define FACHADA_COLOR #FFF3E0
+
+actor "Usuário CLI" as UsuarioCLI
+
+usecase "UC01.1: Digitar Credenciais" as UC01_1
+usecase "UC01.2: Validar Credenciais" as UC01_2
+usecase "UC01.3: Gerar Token JWT" as UC01_3
+usecase "UC01.4: Armazenar Token\nna Sessão" as UC01_4
+
+usecase "UC02.1: Selecionar Operação\nno Menu" as UC02_1
+usecase "UC02.2: Enviar Requisição\ncom Token" as UC02_2
+usecase "UC02.3: Validar Token" as UC02_3
+usecase "UC02.4: Executar Operação" as UC02_4
+usecase "UC02.5: Retornar Resultado\nao Usuário" as UC02_5
+
+usecase "UC03: Registrar Cliente\n(PF ou PJ)" as UC03
+usecase "UC04: Registrar Hidrômetro" as UC04
+usecase "UC05: Consultar Consumo\n(Período)" as UC05
+usecase "UC06: Consultar Histórico\nAuditoria" as UC06
+usecase "UC07: Consultar Notificações\nEnviadas" as UC07
+usecase "UC08: Configurar Sistema" as UC08
+
+UsuarioCLI --> UC01_1
+UC01_1 --> UC01_2
+UC01_2 --> UC01_3
+UC01_3 --> UC01_4
+
+UsuarioCLI --> UC02_1
+UC02_1 --> UC02_2
+UC02_2 --> UC02_3
+UC02_3 --> UC02_4
+UC02_4 --> UC02_5
+
+UC02_1 --> UC03
+UC02_1 --> UC04
+UC02_1 --> UC05
+UC02_1 --> UC06
+UC02_1 --> UC07
+UC02_1 --> UC08
+
+UC03 --> UC02_2
+UC04 --> UC02_2
+UC05 --> UC02_2
+UC06 --> UC02_2
+UC07 --> UC02_2
+UC08 --> UC02_2
+
+note right of UC01_4
+  Token é mantido durante
+  a sessão do CLI
+  Reutilizado em cada operação
+end note
+
+note right of UC02_2
+  Cada requisição inclui
+  o token JWT no header
+  ou parâmetro
+end note
+
+note right of UC08
+  Apenas usuários Admin
+  podem acessar
+end note
+
+@enduml
+

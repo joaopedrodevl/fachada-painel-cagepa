@@ -1,0 +1,99 @@
+@startuml Subsistema de Validação
+!define ABSTRACT_COLOR #E1F5FF
+!define INTERFACE_COLOR #FFF3E0
+!define CLASS_COLOR #F3E5F5
+!define DTO_COLOR #E8F5E9
+
+skinparam classBackgroundColor<<abstract>> ABSTRACT_COLOR
+skinparam classBackgroundColor<<interface>> INTERFACE_COLOR
+skinparam classBackgroundColor<<dto>> DTO_COLOR
+
+package "Validação" {
+
+  abstract class BaseValidator <<abstract>> {
+    -fieldName: String
+    +validate(value: Object): void
+    #throwException(message: String): void
+  }
+
+  class StringValidator extends BaseValidator {
+    -value: String
+    +notNullOrEmpty(): StringValidator
+    +minLength(length: int): StringValidator
+    +maxLength(length: int): StringValidator
+    +matches(pattern: String): StringValidator
+    +cpfOrCnpj(): StringValidator
+  }
+
+  class IntegerValidator extends BaseValidator {
+    -value: Integer
+    +notNull(): IntegerValidator
+    +greaterThan(min: int): IntegerValidator
+    +lessThan(max: int): IntegerValidator
+    +between(min, max: int): IntegerValidator
+  }
+
+  class EmailValidator {
+    +validarEmail(email: String): boolean
+    -isValidEmailFormat(email: String): boolean
+  }
+
+  class CpfCnpjValidator {
+    +validarCPF(cpf: String): boolean
+    +validarCNPJ(cnpj: String): boolean
+    +cleanCpfCnpj(cpfCnpj: String): String
+    -calculateCPFCheckDigit(cpf: String): String
+    -calculateCNPJCheckDigit(cnpj: String): String
+  }
+
+  class ValidatorBuilder {
+    +{static} stringValidator(fieldName: String): StringValidator
+    +{static} integerValidator(fieldName: String): IntegerValidator
+  }
+
+  class ValidationException extends Exception {
+    -message: String
+    +ValidationException(message: String)
+  }
+
+  class ClienteValidator {
+    -cpfCnpjValidator: CpfCnpjValidator
+    -emailValidator: EmailValidator
+    +validarClientePF(cpf, nome, email): void
+    +validarClientePJ(cnpj, razaoSocial): void
+    +validarEndereco(endereco): void
+  }
+
+  class HidrometroValidator {
+    -cpfCnpjValidator: CpfCnpjValidator
+    +validarRegistro(idSha, cliente, endereco): void
+    +validarLimite(limite: Integer): void
+    +validarIdSha(idSha: String): void
+  }
+
+  BaseValidator <|-- StringValidator
+  BaseValidator <|-- IntegerValidator
+  ValidatorBuilder --> StringValidator
+  ValidatorBuilder --> IntegerValidator
+  CpfCnpjValidator --> ValidationException
+  EmailValidator --> ValidationException
+  ClienteValidator --> CpfCnpjValidator
+  ClienteValidator --> EmailValidator
+  HidrometroValidator --> CpfCnpjValidator
+}
+
+note right of BaseValidator
+  Classe abstrata base para todos
+  os validadores seguindo Builder Pattern
+end note
+
+note right of ValidatorBuilder
+  Builder Pattern para criar
+  validadores de forma fluente
+end note
+
+note right of ValidationException
+  Exceção lançada quando validação falha
+end note
+
+@enduml

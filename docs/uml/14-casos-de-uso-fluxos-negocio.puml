@@ -1,0 +1,140 @@
+@startuml Casos de Uso - Fluxos de Negócio Principais
+
+!define USUARIO_COLOR #E1F5FF
+!define SISTEMA_COLOR #FFF3E0
+
+actor "Integrador" as Integrador
+
+rectangle "Fluxo 1: Autenticação e Autorização" {
+  usecase "UC1.1: Login" as UC1_1
+  usecase "UC1.2: Verificar Credenciais\ncontra BD Admin" as UC1_2
+  usecase "UC1.3: Gerar Token JWT" as UC1_3
+  usecase "UC1.4: Armazenar Sessão" as UC1_4
+}
+
+rectangle "Fluxo 2: Registrar Cliente" {
+  usecase "UC2.1: Fornecer Dados\n(CPF/CNPJ, Endereço)" as UC2_1
+  usecase "UC2.2: Validar Formato\nCPF/CNPJ" as UC2_2
+  usecase "UC2.3: Validar Email" as UC2_3
+  usecase "UC2.4: Verificar Duplicata\nno BD" as UC2_4
+  usecase "UC2.5: Persistir Cliente\ne Endereço" as UC2_5
+  usecase "UC2.6: Registrar em\nAuditoria" as UC2_6
+}
+
+rectangle "Fluxo 3: Registrar Hidrômetro" {
+  usecase "UC3.1: Fornecer Dados\n(SHA, Endereço, Limite)" as UC3_1
+  usecase "UC3.2: Validar SHA\nÚnico para Cliente" as UC3_2
+  usecase "UC3.3: Verificar se\nEndereço já Existe" as UC3_3
+  usecase "UC3.4: Reutilizar Endereço\nou Criar Novo" as UC3_4
+  usecase "UC3.5: Persistir\nHidrômetro" as UC3_5
+  usecase "UC3.6: Registrar em\nAuditoria" as UC3_6
+}
+
+rectangle "Fluxo 4: Processar Imagem de Hidrômetro" {
+  usecase "UC4.1: ImageWatcher Detecta\nNova Imagem" as UC4_1
+  usecase "UC4.2: Extrair SHA\ndo Nome da Imagem" as UC4_2
+  usecase "UC4.3: Validar Formato\ne Existência do SHA" as UC4_3
+  usecase "UC4.4: Processador OCR\n(Tesseract)" as UC4_4
+  usecase "UC4.5: Extrair Valor\nda Imagem" as UC4_5
+  usecase "UC4.6: Persistir Leitura\nHidrômetro" as UC4_6
+  usecase "UC4.7: Registrar em\nAuditoria" as UC4_7
+  usecase "UC4.8: Disparar Verificação\nde Consumo Alto" as UC4_8
+}
+
+rectangle "Fluxo 5: Calcular Consumo" {
+  usecase "UC5.1: Integrador Solicita\nConsumo por Período" as UC5_1
+  usecase "UC5.2: Buscar Última Leitura\ndo Período" as UC5_2
+  usecase "UC5.3: Última Leitura =\nConsumo Total Acumulado" as UC5_3
+  usecase "UC5.4: Agregar por\nHidrômetro Individual" as UC5_4
+  usecase "UC5.5: Calcular Total\ndo Cliente" as UC5_5
+  usecase "UC5.6: Retornar DTO\ncom Agregações" as UC5_6
+}
+
+rectangle "Fluxo 6: Notificação de Consumo Alto" {
+  usecase "UC6.1: Serviço Verifica\nTodos os Hidrômetros" as UC6_1
+  usecase "UC6.2: Calcular Consumo\nMensal Atual" as UC6_2
+  usecase "UC6.3: Comparar com\nLimite Mensal" as UC6_3
+  usecase "UC6.4: Se >= 70% Limite:\nEnviar Email" as UC6_4
+  usecase "UC6.5: Usar Resend API\npara Enviar" as UC6_5
+  usecase "UC6.6: Registrar Notificação\nEnviada" as UC6_6
+}
+
+Integrador --> UC1_1
+UC1_1 --> UC1_2
+UC1_2 --> UC1_3
+UC1_3 --> UC1_4
+
+Integrador --> UC2_1
+UC2_1 --> UC2_2
+UC2_2 --> UC2_3
+UC2_3 --> UC2_4
+UC2_4 --> UC2_5
+UC2_5 --> UC2_6
+
+Integrador --> UC3_1
+UC3_1 --> UC3_2
+UC3_2 --> UC3_3
+UC3_3 --> UC3_4
+UC3_4 --> UC3_5
+UC3_5 --> UC3_6
+
+Integrador --> UC4_1
+UC4_1 --> UC4_2
+UC4_2 --> UC4_3
+UC4_3 --> UC4_4
+UC4_4 --> UC4_5
+UC4_5 --> UC4_6
+UC4_6 --> UC4_7
+UC4_7 --> UC4_8
+
+Integrador --> UC5_1
+UC5_1 --> UC5_2
+UC5_2 --> UC5_3
+UC5_3 --> UC5_4
+UC5_4 --> UC5_5
+UC5_5 --> UC5_6
+
+UC4_8 --> UC6_1
+UC6_1 --> UC6_2
+UC6_2 --> UC6_3
+UC6_3 --> UC6_4
+UC6_4 --> UC6_5
+UC6_5 --> UC6_6
+
+note right of UC1_1
+  Acesso necessário para
+  todas operações
+  Token JWT válido por 1 hora
+end note
+
+note right of UC2_4
+  Evita duplicação de
+  cadastro com mesmo
+  CPF/CNPJ
+end note
+
+note right of UC3_3
+  Importante: reutilizar
+  endereço existente para
+  evitar duplicação
+end note
+
+note right of UC4_4
+  Processamento automático
+  via WatchService
+  (monitoramento contínuo)
+end note
+
+note right of UC5_3
+  A última leitura registrada
+  já é o valor total acumulado
+  Não fazer diferença de valores
+end note
+
+note right of UC6_4
+  Verificado automaticamente
+  Pode ser manual ou agendado
+end note
+
+@enduml
+

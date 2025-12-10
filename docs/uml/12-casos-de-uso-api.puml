@@ -1,0 +1,100 @@
+@startuml Casos de Uso - Integração via API REST
+
+!define CLIENTE_COLOR #E1F5FF
+!define SERVIDOR_COLOR #FFF3E0
+
+actor "Cliente API\n(Servidor Externo)" as ClienteAPI
+
+usecase "UC01: POST /api/fachada/auth/login\nEnviar credenciais" as UC01
+usecase "UC02: Validar credenciais\ncontra BD" as UC02
+usecase "UC03: Retornar Token JWT\n+ Expiração" as UC03
+
+usecase "UC04: Enviar Requisição HTTP\n+ Bearer Token" as UC04
+usecase "UC05: Validar Token\nno Proxy" as UC05
+usecase "UC06: Rotear para\nMétodo Correto" as UC06
+usecase "UC07: Retornar JSON\nResponse" as UC07
+
+usecase "UC08: POST /api/fachada/clientes/pf\nRegistrar PF" as UC08
+usecase "UC09: POST /api/fachada/clientes/pj\nRegistrar PJ" as UC09
+usecase "UC10: GET /api/fachada/clientes\nListar Clientes" as UC10
+usecase "UC11: PUT /api/fachada/clientes/{id}\nAtualizar Cliente" as UC11
+
+usecase "UC12: POST /api/fachada/hidrometros\nRegistrar Hidrômetro" as UC12
+usecase "UC13: GET /api/fachada/hidrometros\nListar Hidrômetros" as UC13
+usecase "UC14: PUT /api/fachada/hidrometros/{id}\nAtualizar Status" as UC14
+
+usecase "UC15: GET /api/fachada/consumo/diario\nConsumo Diário" as UC15
+usecase "UC16: GET /api/fachada/consumo/semanal\nConsumo Semanal" as UC16
+usecase "UC17: GET /api/fachada/consumo/mensal\nConsumo Mensal" as UC17
+usecase "UC18: GET /api/fachada/consumo/anual\nConsumo Anual" as UC18
+usecase "UC19: GET /api/fachada/consumo/{clienteId}\nConsumo por Cliente" as UC19
+
+usecase "UC20: GET /api/fachada/auditoria\nListar Auditoria" as UC20
+usecase "UC21: GET /api/fachada/notificacoes\nListar Notificações" as UC21
+
+ClienteAPI --> UC01
+UC01 --> UC02
+UC02 --> UC03
+UC03 --> ClienteAPI
+
+ClienteAPI --> UC04
+UC04 --> UC05
+UC05 --> UC06
+UC06 --> UC07
+UC07 --> ClienteAPI
+
+UC04 --> UC08
+UC04 --> UC09
+UC04 --> UC10
+UC04 --> UC11
+UC04 --> UC12
+UC04 --> UC13
+UC04 --> UC14
+UC04 --> UC15
+UC04 --> UC16
+UC04 --> UC17
+UC04 --> UC18
+UC04 --> UC19
+UC04 --> UC20
+UC04 --> UC21
+
+UC08 --> UC05
+UC09 --> UC05
+UC10 --> UC05
+UC11 --> UC05
+UC12 --> UC05
+UC13 --> UC05
+UC14 --> UC05
+UC15 --> UC05
+UC16 --> UC05
+UC17 --> UC05
+UC18 --> UC05
+UC19 --> UC05
+UC20 --> UC05
+UC21 --> UC05
+
+note right of UC01
+  Authorization: Bearer {token}
+  Content-Type: application/json
+end note
+
+note right of UC03
+  Resposta:
+  {
+    "token": "eyJhbGc...",
+    "expiresIn": 3600
+  }
+end note
+
+note right of UC04
+  Headers obrigatório:
+  Authorization: Bearer {token}
+end note
+
+note right of UC19
+  Query param:
+  ?clienteId=123&periodo=MENSAL
+end note
+
+@enduml
+

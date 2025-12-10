@@ -1,0 +1,132 @@
+@startuml Fluxo de Criação de Admin com Validações
+
+actor Admin as Admin
+participant "CLI/API" as Interface
+participant "SecurePainelCagepaFacadeProxy" as Proxy
+participant "AdminService" as Service
+participant "AdminValidator" as Validator
+participant "AdminDTO" as DTO
+participant "BCryptPasswordEncoder" as BCrypt
+participant "IAdminJpaRepository" as Repository
+participant "AuditLoggerService" as Audit
+database "PostgreSQL" as DB
+
+Admin ->> Interface: criarAdmin(username, password)
+Interface ->> Proxy: criarAdmin(token, username, password)
+
+Proxy ->> Proxy: isAuthenticated(token)
+alt Token Inválido
+    Proxy ->> Audit: logErro(token, "CRIAR_ADMIN_FALHOU", "Token inválido")
+    Proxy -->> Interface: false
+else Token Válido
+    Proxy ->> Service: criarAdmin(username, password)
+
+    Service ->> DTO: new AdminDTO(username, password)
+    DTO -->> Service: AdminDTO instance
+
+    Service ->> Validator: validate(adminDTO)
+
+    alt Username Inválido
+        Validator ->> Validator: validateUsername(username)
+        alt < 3 caracteres
+            Validator -->> Service: throw ValidationException("Username deve ter mínimo 3 caracteres")
+        else Contém espaços
+            Validator -->> Service: throw ValidationException("Username não pode conter espaços")
+        else Não começa com letra
+            Validator -->> Service: throw ValidationException("Username deve começar com letra")
+        else > 50 caracteres
+            Validator -->> Service: throw ValidationException("Username deve ter máximo 50 caracteres")
+        end
+        Service ->> Audit: logErro(token, "CRIAR_ADMIN_FALHOU", erro_validacao)
+        Service -->> Proxy: throw ValidationException
+        Proxy -->> Interface: false
+    else Username Válido
+        Validator ->> Validator: validatePassword(password)
+
+        alt Password Inválido
+            alt < 8 caracteres
+                Validator -->> Service: throw ValidationException("Password deve ter mínimo 8 caracteres")
+            else Sem maiúscula
+                Validator -->> Service: throw ValidationException("Password deve conter maiúscula")
+            else Sem minúscula
+                Validator -->> Service: throw ValidationException("Password deve conter minúscula")
+            else Sem número
+                Validator -->> Service: throw ValidationException("Password deve conter número")
+            else Sem caractere especial
+                Validator -->> Service: throw ValidationException("Password deve conter caractere especial")
+            else > 128 caracteres
+                Validator -->> Service: throw ValidationException("Password deve ter máximo 128 caracteres")
+            end
+            Service ->> Audit: logErro(token, "CRIAR_ADMIN_FALHOU", erro_validacao)
+            Service -->> Proxy: throw ValidationException
+            Proxy -->> Interface: false
+        else Password Válido
+            Service ->> Repository: findByUsername(username)
+            Repository ->> DB: SELECT * FROM admins WHERE username = ?
+
+            alt Username Já Existe
+                DB -->> Repository: Admin found
+                Repository -->> Service: Optional.of(admin)
+                Service ->> Audit: logErro(token, "CRIAR_ADMIN_FALHOU", "Username já existe")
+                Service -->> Proxy: throw ValidationException("Admin com esse username já existe")
+                Proxy -->> Interface: false
+            else Username Único
+                DB -->> Repository: (empty)
+                Repository -->> Service: Optional.empty()
+
+                Service ->> BCrypt: encode(password)
+                BCrypt -->> Service: passwordHash
+
+                Service ->> Repository: save(admin)
+                Repository ->> DB: INSERT INTO admins (username, password) VALUES (?, ?)
+                DB -->> Repository: Admin saved
+                Repository -->> Service: admin
+
+                Service ->> Audit: logSucesso(token, "CRIAR_ADMIN", "Admin criado: " + username)
+                Audit ->> DB: INSERT INTO auditoria (...)
+
+                Service -->> Proxy: true
+                Proxy -->> Interface: true
+                Interface -->> Admin: Admin criado com sucesso!
+            end
+        end
+    end
+end
+
+note over Validator
+  Validações Implementadas:
+
+  Username:
+  • 3-50 caracteres
+  • Sem espaços
+  • Começa com letra
+  • Apenas letras, números, underscore
+
+  Password:
+  • 8-128 caracteres
+  • Contém maiúscula (A-Z)
+  • Contém minúscula (a-z)
+  • Contém número (0-9)
+  • Contém caractere especial (!@#$%^&*)
+end note
+
+note over Service
+  Fluxo Transacional:
+  1. Validar dados com AdminValidator
+  2. Verificar unicidade do username
+  3. Fazer hash da senha com BCrypt
+  4. Persistir no BD
+  5. Registrar sucesso em auditoria
+end note
+
+note over Audit
+  Auditoria registra:
+  • Tipo: CRIAR_ADMIN ou erro
+  • Resultado: sucesso/falha
+  • Mensagem detalhada
+  • Timestamp
+  • Admin responsável (token)
+end note
+
+@enduml
+

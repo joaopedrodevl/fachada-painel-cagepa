@@ -1,0 +1,75 @@
+@startuml Subsistema de Cálculo de Consumo
+!define ABSTRACT_COLOR #E1F5FF
+!define INTERFACE_COLOR #FFF3E0
+!define CLASS_COLOR #F3E5F5
+!define DTO_COLOR #E8F5E9
+
+skinparam classBackgroundColor<<abstract>> ABSTRACT_COLOR
+skinparam classBackgroundColor<<interface>> INTERFACE_COLOR
+skinparam classBackgroundColor<<dto>> DTO_COLOR
+
+package "Cálculo de Consumo" {
+
+  class ConsumoService {
+    -clienteJpaRepository: IClienteJpaRepository
+    -leituraHidrometroRepository: LeituraHidrometroRepositoryImpl
+    +obterUltimaLeitura(clienteCpfCnpj): ConsumoClientePeriodoDTO
+    +calcularConsumoDiario(clienteCpfCnpj): ConsumoClientePeriodoDTO
+    +calcularConsumoSemanal(clienteCpfCnpj): ConsumoClientePeriodoDTO
+    +calcularConsumoMensal(clienteCpfCnpj): ConsumoClientePeriodoDTO
+    +calcularConsumoAnual(clienteCpfCnpj): ConsumoClientePeriodoDTO
+    +calcularConsumoMensalHidrometro(hidrometroId, ano, mes): Double
+  }
+
+  interface ILeituraHidrometroRepository <<interface>> {
+    +calcularConsumoMensalHidrometro(idHidrometro, ano, mes): Double
+    +findByShaId(idSha: String): List<LeituraHidrometro>
+  }
+
+  class LeituraHidrometroRepositoryImpl implements ILeituraHidrometroRepository {
+    -jpaRepository: ILeituraHidrometroJpaRepository
+    +calcularConsumoMensalHidrometro(idHidrometro, ano, mes): Double
+    +findByShaId(idSha: String): List<LeituraHidrometro>
+    +pegarUltimaLeitura(idHidrometro): Optional<Integer>
+    -sumConsumoByHidrometroAndPeriodo(idHidrometro, dataInicio, dataFim): int
+  }
+
+  class ConsumoClientePeriodoDTO <<dto>> {
+    +clienteCpfCnpj(): String
+    +nomeCliente(): String
+    +periodo(): String
+    +consumoTotalM3(): Integer
+    +consumoPorHidrometro(): List<ConsumoHidrometroDTO>
+  }
+
+  class ConsumoHidrometroDTO <<dto>> {
+    +idHidrometro(): String
+    +consumoM3(): Integer
+  }
+
+  enum PeriodoConsumo {
+    DIARIO
+    SEMANAL
+    MENSAL
+    ANUAL
+  }
+
+  ConsumoService --> ILeituraHidrometroRepository
+  ConsumoService --> ConsumoClientePeriodoDTO
+  ConsumoService --> PeriodoConsumo
+  LeituraHidrometroRepositoryImpl --> ConsumoHidrometroDTO
+  ConsumoClientePeriodoDTO --> ConsumoHidrometroDTO
+}
+
+note right of ConsumoService
+  Calcula consumo de água para
+  um cliente em diferentes períodos
+  (diário, semanal, mensal, anual)
+end note
+
+note right of LeituraHidrometroRepositoryImpl
+  Obtém a última leitura do período
+  especificado (valor total acumulado)
+end note
+
+@enduml
