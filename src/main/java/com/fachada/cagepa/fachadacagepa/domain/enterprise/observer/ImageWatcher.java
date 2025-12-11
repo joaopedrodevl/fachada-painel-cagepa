@@ -1,7 +1,6 @@
 package com.fachada.cagepa.fachadacagepa.domain.enterprise.observer;
 
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.observer.interfaces.ImageObserver;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.*;

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Permite compor múltiplos validadores em uma única validação
+ * Permite compor múltiplos validadores numa única validação
  *
  * @param <T> Tipo de dado a ser validado
  */

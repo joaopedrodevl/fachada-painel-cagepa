@@ -10,8 +10,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class ProprietarioImageProcessor implements HidromeImageProcessor{
 
-    @Autowired
-    private ImageDigitExtractor imageDigitExtractor;
+    private final ImageDigitExtractor imageDigitExtractor;
+
+    public ProprietarioImageProcessor(ImageDigitExtractor imageDigitExtractor) {
+        this.imageDigitExtractor = imageDigitExtractor;
+    }
 
     @Override
     public String extractReading(String imagePath) throws Exception{

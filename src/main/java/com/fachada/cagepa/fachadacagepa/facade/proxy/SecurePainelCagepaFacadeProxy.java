@@ -9,7 +9,7 @@ import com.fachada.cagepa.fachadacagepa.domain.application.services.AuthService;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.TipoCliente;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.TipoEndereco;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.validation.ValidationException;
-import com.fachada.cagepa.fachadacagepa.domain.enterprise.audit.AuditLoggerService;
+import com.fachada.cagepa.fachadacagepa.domain.application.services.AuditLoggerService;
 import com.fachada.cagepa.fachadacagepa.facade.ISecurePainelCagepaFacadeProxy;
 import com.fachada.cagepa.fachadacagepa.facade.PainelCagepaFacade;
 import org.springframework.beans.factory.annotation.Autowired;

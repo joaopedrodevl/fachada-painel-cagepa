@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Observer Pattern - Gerenciador de notificacoes
+ * Gerenciador de notificacoes
  * Mantem registro de todas as notificacoes enviadas
  */
 public class NotificacaoObserver {

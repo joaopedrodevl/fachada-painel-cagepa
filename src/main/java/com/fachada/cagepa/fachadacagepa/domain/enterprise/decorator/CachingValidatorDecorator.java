@@ -6,7 +6,6 @@ import java.util.Map;
 
 /**
  * Cacheia resultados de validações para melhorar performance
- * Útil quando validações complexas são chamadas repetidamente
  */
 public class CachingValidatorDecorator<T> extends ValidatorDecorator<T> {
     

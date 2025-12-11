@@ -7,7 +7,6 @@ import com.fachada.cagepa.fachadacagepa.domain.application.dtos.ConsumoClientePe
 import com.fachada.cagepa.fachadacagepa.domain.application.dtos.HidrometroDTO;
 import com.fachada.cagepa.fachadacagepa.domain.application.services.*;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.factories.ImageProcessorFactory;
-import com.fachada.cagepa.fachadacagepa.domain.enterprise.factories.LeituraHidrometroFactory;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.observer.FachadaImageObserver;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.observer.ImageWatcher;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.validation.ValidationException;
@@ -43,7 +42,7 @@ public class PainelCagepaFacade {
     private ImageProcessorFactory imageProcessorFactory;
 
     @Autowired
-    private com.fachada.cagepa.fachadacagepa.domain.enterprise.audit.AuditLoggerService auditLogger;
+    private AuditLoggerService auditLogger;
 
     @Autowired
     private com.fachada.cagepa.fachadacagepa.domain.application.services.NotificacaoConsumoService notificacaoConsumoService;
@@ -121,10 +120,6 @@ public class PainelCagepaFacade {
      */
     public ConsumoClientePeriodoDTO obterConsumoAnual(String clienteCpfCnpj) throws ValidationException {
         return consumoService.calcularConsumoAnual(clienteCpfCnpj);
-    }
-
-    public CommandInvoker getCommandInvoker() {
-        return commandInvoker;
     }
 
     public ConfigurationFacade getConfigurationFacade() {

@@ -27,12 +27,11 @@ public class ImageDigitExtractor {
 
     private static final Logger logger = Logger.getLogger(ImageDigitExtractor.class.getName());
 
-    private final String TESSDATA_PATH = SystemConfiguration.getInstance().getTessDataPath();
-
     private final ITesseract tesseract;
 
     public ImageDigitExtractor() throws IOException {
         this.tesseract = new Tesseract();
+        String TESSDATA_PATH = SystemConfiguration.getInstance().getTessDataPath();
         this.tesseract.setDatapath(TESSDATA_PATH);
         this.tesseract.setLanguage("por");
         this.tesseract.setOcrEngineMode(1); // LSTM

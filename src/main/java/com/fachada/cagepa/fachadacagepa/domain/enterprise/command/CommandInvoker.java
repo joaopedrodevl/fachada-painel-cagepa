@@ -77,7 +77,6 @@ public class CommandInvoker {
     
     /**
      * Registra execução do comando para auditoria
-     * Em um projeto real, isso seria persistido em banco de dados
      */
     private void logCommandExecution(Command command, String status) {
         String log = String.format("[%s] %s | Usuario: %s | Comando: %s",

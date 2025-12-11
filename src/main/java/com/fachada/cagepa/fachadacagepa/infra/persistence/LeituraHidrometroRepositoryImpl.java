@@ -44,7 +44,7 @@ public class LeituraHidrometroRepositoryImpl implements ILeituraHidrometroReposi
     }
 
     /**
-     * Calcula a soma de consumo (valor) para um hidrometro em um período específico
+     * Calcula a soma de consumo (valor) para um hidrometro num período específico
      *
      * @param idHidrometro ID do hidrometro
      * @param dataInicio Data/hora inicial do período

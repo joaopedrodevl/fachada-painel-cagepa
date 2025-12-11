@@ -7,7 +7,6 @@ import com.fachada.cagepa.fachadacagepa.domain.enterprise.factories.LeituraHidro
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.strategy.HidromeImageProcessor;
 import com.fachada.cagepa.fachadacagepa.infra.persistence.IHidrometroJpaRepository;
 import com.fachada.cagepa.fachadacagepa.infra.persistence.LeituraHidrometroRepositoryImpl;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,15 +16,18 @@ import java.util.Objects;
 
 @Service
 public class LeituraHidrometroService {
-    @Autowired
-    private LeituraHidrometroRepositoryImpl leituraHidrometroRepository;
+    private final LeituraHidrometroRepositoryImpl leituraHidrometroRepository;
 
-    @Autowired
-    private ImageProcessorFactory processorFactory;
-    @Autowired
-    private LeituraHidrometroFactory leituraHidrometroFactory;
-    @Autowired
-    private IHidrometroJpaRepository hidrometroJpaRepository;
+    private final ImageProcessorFactory processorFactory;
+    private final LeituraHidrometroFactory leituraHidrometroFactory;
+    private final IHidrometroJpaRepository hidrometroJpaRepository;
+
+    public LeituraHidrometroService(LeituraHidrometroRepositoryImpl leituraHidrometroRepository, ImageProcessorFactory processorFactory, LeituraHidrometroFactory leituraHidrometroFactory, IHidrometroJpaRepository hidrometroJpaRepository) {
+        this.leituraHidrometroRepository = leituraHidrometroRepository;
+        this.processorFactory = processorFactory;
+        this.leituraHidrometroFactory = leituraHidrometroFactory;
+        this.hidrometroJpaRepository = hidrometroJpaRepository;
+    }
 
     @Transactional
     public void salvarLeitura(LeituraHidrometro leitura) {

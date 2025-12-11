@@ -10,9 +10,9 @@ import com.fachada.cagepa.fachadacagepa.infra.persistence.IHidrometroJpaReposito
 
 import jakarta.transaction.Transactional;
 
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
@@ -23,17 +23,22 @@ public class NotificacaoConsumoService {
     private static final Logger logger = LoggerFactory.getLogger("NOTIFICACAO");
     private static final double LIMIAR_PADRAO = 70.0;
 
-    @Autowired
-    private IHidrometroJpaRepository hidrometroRepository;
+    private final IHidrometroJpaRepository hidrometroRepository;
 
-    @Autowired
-    private ConsumoService consumoService;
+    private final ConsumoService consumoService;
 
-    @Autowired
-    private NotificacaoStrategy notificacaoStrategy;
+    private final NotificacaoStrategy notificacaoStrategy;
 
+    @Getter
     private final NotificacaoObserver notificacaoObserver = new NotificacaoObserver();
+    @Getter
     private final ConsumoLimiarStrategy consumoLimiarStrategy = new ConsumoLimiarStrategy(LIMIAR_PADRAO);
+
+    public NotificacaoConsumoService(IHidrometroJpaRepository hidrometroRepository, ConsumoService consumoService, NotificacaoStrategy notificacaoStrategy) {
+        this.hidrometroRepository = hidrometroRepository;
+        this.consumoService = consumoService;
+        this.notificacaoStrategy = notificacaoStrategy;
+    }
 
     @Transactional
     public void verificarENotificarConsumoAlto() {
@@ -46,13 +51,13 @@ public class NotificacaoConsumoService {
         for (Hidrometro hidrometro : hidrometros) {
             try {
                 if (hidrometro.getLimiteConsumoMensalM3() == null) {
-                    logger.warn("Hidrometro " + hidrometro.getIdSha() + " nao tem limite de consumo definido");
+                    logger.warn("Hidrometro {} nao tem limite de consumo definido", hidrometro.getIdSha());
                     continue;
                 }
 
                 Cliente cliente = hidrometro.getCliente();
                 if (cliente == null || cliente.getEmail() == null || cliente.getEmail().isEmpty()) {
-                    logger.warn("Hidrometro " + hidrometro.getIdSha() + " nao tem cliente ou email associado");
+                    logger.warn("Hidrometro {} nao tem cliente ou email associado", hidrometro.getIdSha());
                     continue;
                 }
 
@@ -81,68 +86,34 @@ public class NotificacaoConsumoService {
                     if (notificacaoStrategy != null && notificacaoStrategy.enviarNotificacao(notificacao)) {
                         notificacoesEnviadas++;
                         notificacaoObserver.registrarNotificacao(notificacao);
-                        logger.info("Notificacao enviada para cliente " + cliente.getNomeCompleto() +
-                                " | Hidrometro: " + hidrometro.getIdSha() +
-                                " | Consumo: " + String.format("%.2f", consumoMensal) + " m3 (" +
-                                String.format("%.1f", percentualConsumo) + "%)");
+                        logger.info("Notificacao enviada para cliente {} | Hidrometro: {} | Consumo: {} m3 ({}%)", cliente.getNomeCompleto(), hidrometro.getIdSha(), String.format("%.2f", consumoMensal), String.format("%.1f", percentualConsumo));
                     } else {
                         erros++;
-                        logger.error("Falha ao enviar notificacao para cliente " + cliente.getNomeCompleto() +
-                                " | Hidrometro: " + hidrometro.getIdSha());
+                        logger.error("Falha ao enviar notificacao para cliente {} | Hidrometro: {}", cliente.getNomeCompleto(), hidrometro.getIdSha());
                     }
                 }
             } catch (Exception e) {
-                logger.error("Erro ao processar notificacao para hidrometro: " +
-                    hidrometro.getIdSha() + " | Erro: " + e.getMessage(), e);
+                logger.error("Erro ao processar notificacao para hidrometro: {} | Erro: {}", hidrometro.getIdSha(), e.getMessage(), e);
                 erros++;
             }
         }
 
-        logger.info("Verificacao concluida. Notificacoes enviadas: " + notificacoesEnviadas +
-                   " | Erros: " + erros);
+        logger.info("Verificacao concluida. Notificacoes enviadas: {} | Erros: {}", notificacoesEnviadas, erros);
     }
 
-    public NotificacaoObserver getNotificacaoObserver() {
-        return notificacaoObserver;
-    }
-
-    public String obterRelatorioNotificacoes() {
+    public List<NotificacaoConsumo> obterRelatorioNotificacoes() {
         List<NotificacaoConsumo> notificacoes = notificacaoObserver.obterNotificacoes();
 
         if (notificacoes.isEmpty()) {
-            return "Nenhuma notificacao foi enviada ainda.";
+            return null;
         }
 
-        StringBuilder relatorio = new StringBuilder();
-        relatorio.append("\n========== RELATORIO DE NOTIFICACOES ==========\n");
-        relatorio.append("Total de Notificacoes: ").append(notificacaoObserver.getTotalNotificacoes()).append("\n");
-        relatorio.append("Notificacoes Enviadas: ").append(notificacaoObserver.getTotalNotificacoesEnviadas()).append("\n");
-        relatorio.append("\n========== DETALHES ==========\n");
-
-        for (NotificacaoConsumo notificacao : notificacoes) {
-            relatorio.append("\nCliente: ").append(notificacao.getClienteNome()).append("\n");
-            relatorio.append("Email: ").append(notificacao.getClienteEmail()).append("\n");
-            relatorio.append("Hidrometro: ").append(notificacao.getHidrometroId()).append("\n");
-            relatorio.append("Consumo Atual: ").append(String.format("%.2f", notificacao.getConsumoAtual()))
-                    .append(" m3\n");
-            relatorio.append("Limite Mensal: ").append(notificacao.getLimiteConsumo()).append(" m3\n");
-            relatorio.append("Percentual: ").append(String.format("%.1f", notificacao.getPercentualConsumo()))
-                    .append("%\n");
-            relatorio.append("Status: ").append(notificacao.getStatus()).append("\n");
-            relatorio.append("Data: ").append(notificacao.getDataNotificacao()).append("\n");
-            relatorio.append("---\n");
-        }
-
-        return relatorio.toString();
-    }
-
-    public ConsumoLimiarStrategy getConsumoLimiarStrategy() {
-        return consumoLimiarStrategy;
+        return notificacoes;
     }
 
     public void setNovoLimiar(double novoLimiar) {
         consumoLimiarStrategy.setLimiarPercentual(novoLimiar);
-        logger.info("Novo limiar de notificacao definido: " + novoLimiar + "%");
+        logger.info("Novo limiar de notificacao definido: {}%", novoLimiar);
     }
 }
 

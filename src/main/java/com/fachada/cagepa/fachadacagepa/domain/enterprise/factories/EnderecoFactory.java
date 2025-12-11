@@ -1,6 +1,7 @@
 package com.fachada.cagepa.fachadacagepa.domain.enterprise.factories;
 
 import com.fachada.cagepa.fachadacagepa.domain.application.dtos.EnderecoDTO;
+import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.TipoEndereco;
 import com.fachada.cagepa.fachadacagepa.infra.persistence.Endereco;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +22,21 @@ public class EnderecoFactory implements IEnderecoFactory{
                 cepSanitizado,
                 enderecoDTO.tipoEndereco()
         );
+    }
+
+    /**
+     * Método alternativo para criar um endereço
+     */
+    public Endereco criarEndereco(EnderecoDTO enderecoDTO) {
+        return createEndereco(enderecoDTO);
+    }
+
+    /**
+     * Cria um endereço com tipo padrão (RESIDENCIAL)
+     */
+    public Endereco criarEnderecoComTipoPadrao(String logradouro, String numero, String complemento,
+                                                String bairro, String cidade, String estado, String cep) {
+        return criarEndereco(new EnderecoDTO(logradouro, numero, complemento, bairro, cidade, estado, cep, TipoEndereco.RESIDENCIAL));
     }
 
     private String sanitizarEstado(String estado) {

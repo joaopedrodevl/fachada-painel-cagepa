@@ -25,7 +25,7 @@ public class AprovadoClienteState implements ClienteState {
     @Override
     public void suspender(Cliente cliente, String motivo) throws StateTransitionException {
         cliente.setClienteState(new SuspensoClienteState());
-        System.out.println("🔒 Cliente suspenso. Motivo: " + motivo);
+        System.out.println("Cliente suspenso. Motivo: " + motivo);
     }
 
     @Override

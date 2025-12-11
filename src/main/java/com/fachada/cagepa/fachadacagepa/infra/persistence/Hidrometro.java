@@ -1,7 +1,6 @@
 package com.fachada.cagepa.fachadacagepa.infra.persistence;
 
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.StatusHidrometro;
-import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.StatusLeituraHidrometro;
 import jakarta.persistence.*;
 import lombok.*;
 

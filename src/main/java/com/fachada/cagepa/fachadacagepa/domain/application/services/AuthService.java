@@ -38,10 +38,23 @@ public class AuthService {
         }
     }
 
+    /**
+     * Login do administrador com validação de credenciais
+     * @param username Username do admin (3-50 caracteres)
+     * @param rawPassword Senha em texto plano (8-128 caracteres)
+     * @return Token JWT se login bem-sucedido, null caso contrário
+     */
     public String login(String username, String rawPassword) {
         Optional<Admin> adminOpt = adminRepository.findByUsername(username);
         if (adminOpt.isPresent()) {
             Admin admin = adminOpt.get();
+
+            // Validar se admin está ativo
+            if (!admin.getAtivo()) {
+                auditService.logLoginFailure(username);
+                return null;
+            }
+
             if (passwordEncoder.matches(rawPassword, admin.getPassword())) {
                 auditService.logLoginSuccess(username);
                 return jwtService.generateToken(username);

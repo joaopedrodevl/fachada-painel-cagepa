@@ -8,8 +8,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ColaboradorImageProcessor implements HidromeImageProcessor {
-    @Autowired
-    private ImageDigitExtractor extractor;
+    private final ImageDigitExtractor extractor;
+
+    public ColaboradorImageProcessor(ImageDigitExtractor extractor) {
+        this.extractor = extractor;
+    }
 
     @Override
     public String extractReading(String imagePath) throws Exception {

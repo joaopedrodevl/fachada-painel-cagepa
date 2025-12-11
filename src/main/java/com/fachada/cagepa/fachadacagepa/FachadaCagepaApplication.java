@@ -2,7 +2,8 @@ package com.fachada.cagepa.fachadacagepa;
 
 import com.fachada.cagepa.fachadacagepa.facade.proxy.SecurePainelCagepaFacadeProxy;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.validation.ValidationException;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,8 +14,10 @@ import java.util.Scanner;
 @SpringBootApplication
 public class FachadaCagepaApplication implements CommandLineRunner {
 
-    @Autowired
-    private SecurePainelCagepaFacadeProxy securePainelCagepaFacadeProxy;
+    private final SecurePainelCagepaFacadeProxy securePainelCagepaFacadeProxy;
+
+    @Value("${app.cli.enabled:true}")
+    private boolean cliEnabled;
 
     private Scanner scanner;
     private String token;
@@ -34,12 +37,20 @@ public class FachadaCagepaApplication implements CommandLineRunner {
     private static final String DEFAULT_ESTADO = "PE";
     private static final String DEFAULT_CEP = "12345-678";
 
+    public FachadaCagepaApplication(SecurePainelCagepaFacadeProxy securePainelCagepaFacadeProxy) {
+        this.securePainelCagepaFacadeProxy = securePainelCagepaFacadeProxy;
+    }
+
     public static void main(String[] args) {
         SpringApplication.run(FachadaCagepaApplication.class, args);
     }
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String @NonNull ... args) throws Exception {
+        if (!cliEnabled) {
+            return;
+        }
+
         scanner = new Scanner(System.in);
 
         System.out.println("========== CLIENTE CLI - PAINEL CAGEPA ==========\n");
@@ -248,26 +259,25 @@ public class FachadaCagepaApplication implements CommandLineRunner {
         if (periodo == -1) periodo = 1;
 
         com.fachada.cagepa.fachadacagepa.domain.application.dtos.ConsumoClientePeriodoDTO consumo = null;
-        String periodoStr = "";
-
-        switch (periodo) {
-            case 1:
+        String periodoStr = switch (periodo) {
+            case 1 -> {
                 consumo = securePainelCagepaFacadeProxy.obterConsumoDiario(token, clienteCpfCnpj);
-                periodoStr = "Diário";
-                break;
-            case 2:
+                yield "Diário";
+            }
+            case 2 -> {
                 consumo = securePainelCagepaFacadeProxy.obterConsumoSemanal(token, clienteCpfCnpj);
-                periodoStr = "Semanal";
-                break;
-            case 3:
+                yield "Semanal";
+            }
+            case 3 -> {
                 consumo = securePainelCagepaFacadeProxy.obterConsumoMensal(token, clienteCpfCnpj);
-                periodoStr = "Mensal";
-                break;
-            case 4:
+                yield "Mensal";
+            }
+            case 4 -> {
                 consumo = securePainelCagepaFacadeProxy.obterConsumoAnual(token, clienteCpfCnpj);
-                periodoStr = "Anual";
-                break;
-        }
+                yield "Anual";
+            }
+            default -> "";
+        };
 
         if (consumo != null) {
             System.out.println("\nConsumo " + periodoStr + ":");

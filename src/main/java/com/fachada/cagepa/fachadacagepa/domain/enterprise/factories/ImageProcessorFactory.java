@@ -8,11 +8,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ImageProcessorFactory {
-    @Autowired
-    private ProprietarioImageProcessor  proprietarioImageProcessor;
+    private final ProprietarioImageProcessor  proprietarioImageProcessor;
 
-    @Autowired
-    private ColaboradorImageProcessor colaboradorImageProcessor;
+    private final ColaboradorImageProcessor colaboradorImageProcessor;
+
+    public ImageProcessorFactory(ProprietarioImageProcessor proprietarioImageProcessor, ColaboradorImageProcessor colaboradorImageProcessor) {
+        this.proprietarioImageProcessor = proprietarioImageProcessor;
+        this.colaboradorImageProcessor = colaboradorImageProcessor;
+    }
 
     public HidromeImageProcessor getProcessor(String fileName) throws Exception {
         if (proprietarioImageProcessor.supports(fileName)) {

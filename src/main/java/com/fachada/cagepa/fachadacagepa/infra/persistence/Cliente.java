@@ -69,6 +69,9 @@ public class Cliente {
     @Column(name = "deleted_at")
     private LocalDateTime dataRemocao;
 
+    @Column(name = "ativo", nullable = false)
+    private Boolean ativo = true;
+
     public Cliente(String cpfCnpj, String nomeCompleto, String nomeFantasia, String razaoSocial,
                    String email, String telefone, Endereco endereco, TipoCliente tipoCliente) {
         this.cpfCnpj = cpfCnpj;

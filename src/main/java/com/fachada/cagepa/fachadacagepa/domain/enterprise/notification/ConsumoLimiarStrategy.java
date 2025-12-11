@@ -1,8 +1,11 @@
 package com.fachada.cagepa.fachadacagepa.domain.enterprise.notification;
 
+import lombok.Getter;
+
 /**
  * Determina quando enviar notificacao baseado no percentual de consumo
  */
+@Getter
 public class ConsumoLimiarStrategy {
 
     private double limiarPercentual;
@@ -16,10 +19,6 @@ public class ConsumoLimiarStrategy {
 
     public boolean deveCautivar(double percentualConsumo) {
         return percentualConsumo >= limiarPercentual;
-    }
-
-    public double getLimiarPercentual() {
-        return limiarPercentual;
     }
 
     public void setLimiarPercentual(double novoLimiar) {
