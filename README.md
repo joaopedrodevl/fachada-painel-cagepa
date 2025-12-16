@@ -696,21 +696,6 @@ Toda operação sensível é registrada:
 
 ---
 
-## 📞 Suporte
-
-Para dúvidas sobre os padrões implementados, consulte:
-1. Os comentários nas classes de padrão
-2. A documentação UML em `/docs/uml/`
-3. Os testes em `/src/test/`
-
----
-
-## 📄 Licença
-
-[Especificar licença do projeto]
-
----
-
 **Última atualização:** Dezembro 2025  
 **Versão:** 0.0.1-SNAPSHOT
 
