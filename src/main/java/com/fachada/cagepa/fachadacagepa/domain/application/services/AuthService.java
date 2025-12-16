@@ -31,10 +31,10 @@ public class AuthService {
         if (adminRepository.count() == 0) {
             Admin admin = new Admin();
             admin.setUsername("admin");
-            admin.setPassword(passwordEncoder.encode("123456"));
+            admin.setPassword(passwordEncoder.encode("Admin222!"));
             adminRepository.save(admin);
             auditService.logAdminCreated("admin");
-            System.out.println("Administrador padrão criado: admin / 123456");
+            System.out.println("Administrador padrão criado: admin / Admin222!");
         }
     }
 

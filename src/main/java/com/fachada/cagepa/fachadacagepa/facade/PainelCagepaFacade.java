@@ -4,6 +4,7 @@ import com.fachada.cagepa.fachadacagepa.config.SystemConfiguration;
 import com.fachada.cagepa.fachadacagepa.domain.application.dtos.ClientePfDTO;
 import com.fachada.cagepa.fachadacagepa.domain.application.dtos.ClientePjDTO;
 import com.fachada.cagepa.fachadacagepa.domain.application.dtos.ConsumoClientePeriodoDTO;
+import com.fachada.cagepa.fachadacagepa.domain.application.dtos.ConsumoHidrometroDTO;
 import com.fachada.cagepa.fachadacagepa.domain.application.dtos.HidrometroDTO;
 import com.fachada.cagepa.fachadacagepa.domain.application.services.*;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.factories.ImageProcessorFactory;
@@ -11,12 +12,15 @@ import com.fachada.cagepa.fachadacagepa.domain.enterprise.observer.FachadaImageO
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.observer.ImageWatcher;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.validation.ValidationException;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.command.CommandInvoker;
+import com.fachada.cagepa.fachadacagepa.infra.persistence.Hidrometro;
+import com.fachada.cagepa.fachadacagepa.infra.persistence.Notificacao;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 public class PainelCagepaFacade {
@@ -46,6 +50,12 @@ public class PainelCagepaFacade {
 
     @Autowired
     private com.fachada.cagepa.fachadacagepa.domain.application.services.NotificacaoConsumoService notificacaoConsumoService;
+
+    @Autowired
+    private NotificacaoPersistenciaService notificacaoPersistenciaService;
+
+    @Autowired
+    private AuditService auditService;
 
     private ConfigurationFacade configurationFacade;
 
@@ -122,6 +132,26 @@ public class PainelCagepaFacade {
         return consumoService.calcularConsumoAnual(clienteCpfCnpj);
     }
 
+    /**
+     * RF-032: Retorna o consumo individual de cada hidrômetro do cliente
+     * @param clienteCpfCnpj CPF/CNPJ do cliente
+     * @return Lista com consumo individual de cada hidrometro
+     */
+    @Transactional(readOnly = true)
+    public List<ConsumoHidrometroDTO> obterConsumoIndividualPorHidrometro(String clienteCpfCnpj) throws ValidationException {
+        return consumoService.obterConsumoIndividualPorHidrometro(clienteCpfCnpj);
+    }
+
+    /**
+     * RF-033: Retorna a soma do consumo de todos os hidrômetros do cliente
+     * @param clienteCpfCnpj CPF/CNPJ do cliente
+     * @return Consumo total de todos os hidrometros
+     */
+    @Transactional(readOnly = true)
+    public int obterConsumoTotalCliente(String clienteCpfCnpj) throws ValidationException {
+        return consumoService.obterConsumoTotalCliente(clienteCpfCnpj);
+    }
+
     public ConfigurationFacade getConfigurationFacade() {
         if (configurationFacade == null) {
             try {
@@ -181,5 +211,83 @@ public class PainelCagepaFacade {
      */
     public void alterarLimiarNotificacao(double novoLimiar) {
         notificacaoConsumoService.setNovoLimiar(novoLimiar);
+    }
+
+    /**
+     * Retorna os emails enviados para clientes que ultrapassaram >= 70% do limite
+     * @return Lista de notificações enviadas
+     */
+    @Transactional
+    public List<Notificacao> obterEmailsNotificacoes() {
+        try {
+            return notificacaoPersistenciaService.obterHistoricoNotificacoesPorPeriodo(
+                    java.time.LocalDateTime.now().minusDays(30),
+                    java.time.LocalDateTime.now()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao obter emails de notificações: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Retorna histórico de notificações enviadas
+     * @param clienteCpfCnpj CPF/CNPJ do cliente
+     * @return Lista de notificações do cliente
+     */
+    @Transactional
+    public List<Notificacao> obterHistoricoNotificacoes(String clienteCpfCnpj) throws ValidationException {
+        try {
+            return notificacaoPersistenciaService.obterHistoricoNotificacoesCliente(clienteCpfCnpj);
+        } catch (Exception e) {
+            throw new ValidationException("Erro ao obter histórico de notificações: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Verifica se pode enviar notificação (não duplicada no mesmo dia)
+     * @param clienteCpfCnpj CPF/CNPJ do cliente
+     * @param hidrometroIdSha ID SHA do hidrometro
+     * @return true se pode enviar, false se já foi enviada hoje
+     */
+    @Transactional
+    public boolean podeEnviarNotificacao(String clienteCpfCnpj, String hidrometroIdSha) {
+        return notificacaoPersistenciaService.podeEnviarNotificacao(clienteCpfCnpj, hidrometroIdSha);
+    }
+
+    /**
+     * Busca um hidrômetro pelo identificador SHA
+     * @param idSha ID SHA do hidrômetro
+     * @return Dados do hidrômetro
+     */
+    @Transactional
+    public Hidrometro obterHidrometroPorSha(String idSha) throws ValidationException {
+        try {
+            return hidrometroService.obterHidrometroPorSha(idSha)
+                    .orElseThrow(() -> new ValidationException("Hidrometro não encontrado com ID SHA: " + idSha));
+        } catch (ValidationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ValidationException("Erro ao buscar hidrometro: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public java.util.List<Hidrometro> obterHidrometrosPorCliente(String clienteCpfCnpj) {
+        return hidrometroService.obterHidrometrosPorCliente(clienteCpfCnpj);
+    }
+
+    @Transactional
+    public boolean alterarStatusHidrometro(String idSha, boolean ativo) {
+        return hidrometroService.alterarStatusHidrometro(idSha, ativo);
+    }
+
+    /**
+     * Retorna histórico de auditoria das operações realizadas no sistema
+     * Permite rastreabilidade das operações: CRUD, Usuário, Timestamp, Resultado
+     * @return Lista de entradas de auditoria
+     */
+    @Transactional
+    public List<com.fachada.cagepa.fachadacagepa.infra.persistence.AuditEntry> obterHistoricoAuditoria() {
+        return auditService.obterHistoricoAuditoria();
     }
 }

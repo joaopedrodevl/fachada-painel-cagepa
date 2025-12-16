@@ -5,6 +5,8 @@ import com.fachada.cagepa.fachadacagepa.domain.enterprise.factories.EnderecoFact
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.validation.ValidationException;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.validation.dto.HidrometroValidator;
 import com.fachada.cagepa.fachadacagepa.domain.util.CpfCnpjValidator;
+import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.OperacaoAudit;
+import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.EntidadeAudit;
 import com.fachada.cagepa.fachadacagepa.infra.persistence.Endereco;
 import com.fachada.cagepa.fachadacagepa.infra.persistence.Hidrometro;
 import com.fachada.cagepa.fachadacagepa.infra.persistence.IClienteJpaRepository;
@@ -24,11 +26,14 @@ public class HidrometroService {
 
     private final EnderecoFactory enderecoFactory;
 
-    public HidrometroService(IHidrometroJpaRepository hidrometroJpaRepository, IClienteJpaRepository clienteJpaRepository, IEnderecoJpaRepository enderecoJpaRepository, EnderecoFactory enderecoFactory) {
+    private final AuditService auditService;
+
+    public HidrometroService(IHidrometroJpaRepository hidrometroJpaRepository, IClienteJpaRepository clienteJpaRepository, IEnderecoJpaRepository enderecoJpaRepository, EnderecoFactory enderecoFactory, AuditService auditService) {
         this.hidrometroJpaRepository = hidrometroJpaRepository;
         this.clienteJpaRepository = clienteJpaRepository;
         this.enderecoJpaRepository = enderecoJpaRepository;
         this.enderecoFactory = enderecoFactory;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -103,11 +108,16 @@ public class HidrometroService {
             hidrometro.setStatus(novoStatus);
             hidrometroJpaRepository.save(hidrometro);
 
+            auditService.logHidrometroStatusAlterado(idSha, novoStatus.toString(), "ADMIN");
             System.out.println("Hidrometro " + idSha + " status alterado para: " + novoStatus);
             return true;
         } catch (IllegalArgumentException e) {
+            auditService.logErroOperacao(OperacaoAudit.UPDATE, EntidadeAudit.HIDROMETRO,
+                    "SHA: " + idSha, "ADMIN", e.getMessage());
             throw e;
         } catch (Exception e) {
+            auditService.logErroOperacao(OperacaoAudit.UPDATE, EntidadeAudit.HIDROMETRO,
+                    "SHA: " + idSha, "ADMIN", e.getMessage());
             throw new RuntimeException("Erro ao alterar status do hidrometro: " + e.getMessage(), e);
         }
     }
@@ -142,7 +152,7 @@ public class HidrometroService {
      * @param idSha ID SHA do hidrômetro
      * @return Optional com os dados do hidrômetro
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public java.util.Optional<Hidrometro> obterHidrometroPorSha(String idSha) {
         try {
             // RF-022: Validar identificador SHA
@@ -154,10 +164,18 @@ public class HidrometroService {
                 throw new ValidationException("ID SHA não pode ter mais de 50 caracteres");
             }
 
-            return hidrometroJpaRepository.findById(idSha.trim());
+            var resultado = hidrometroJpaRepository.findById(idSha.trim());
+            if (resultado.isPresent()) {
+                auditService.logBuscaHidrometroPorSha(idSha, "ADMIN");
+            }
+            return resultado;
         } catch (ValidationException e) {
+            auditService.logErroOperacao(OperacaoAudit.READ, EntidadeAudit.HIDROMETRO, 
+                    "SHA: " + idSha, "ADMIN", e.getMessage());
             throw new RuntimeException("Validação de SHA falhou: " + e.getMessage());
         } catch (Exception e) {
+            auditService.logErroOperacao(OperacaoAudit.READ, EntidadeAudit.HIDROMETRO,
+                    "SHA: " + idSha, "ADMIN", e.getMessage());
             throw new RuntimeException("Erro ao obter hidrometro: " + e.getMessage(), e);
         }
     }

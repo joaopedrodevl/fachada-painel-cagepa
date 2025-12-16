@@ -5,31 +5,39 @@ import com.fachada.cagepa.fachadacagepa.domain.application.dtos.ClientePjDTO;
 import com.fachada.cagepa.fachadacagepa.domain.application.dtos.ConsumoClientePeriodoDTO;
 import com.fachada.cagepa.fachadacagepa.domain.application.dtos.EnderecoDTO;
 import com.fachada.cagepa.fachadacagepa.domain.application.dtos.HidrometroDTO;
+import com.fachada.cagepa.fachadacagepa.domain.application.services.AdminService;
 import com.fachada.cagepa.fachadacagepa.domain.application.services.AuthService;
+import com.fachada.cagepa.fachadacagepa.domain.application.services.ClienteService;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.TipoCliente;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.TipoEndereco;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.validation.ValidationException;
 import com.fachada.cagepa.fachadacagepa.domain.application.services.AuditLoggerService;
 import com.fachada.cagepa.fachadacagepa.facade.ISecurePainelCagepaFacadeProxy;
 import com.fachada.cagepa.fachadacagepa.facade.PainelCagepaFacade;
+import com.fachada.cagepa.fachadacagepa.infra.persistence.Cliente;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.List;
 
 @Component
 public class SecurePainelCagepaFacadeProxy implements ISecurePainelCagepaFacadeProxy {
     private final PainelCagepaFacade painelCagepaFacade;
     private final AuthService authService;
     private final AuditLoggerService auditLogger;
+    private final AdminService adminService;
+    private final ClienteService clienteService;
 
     @Autowired
-    public SecurePainelCagepaFacadeProxy(PainelCagepaFacade painelCagepaFacade, AuthService authService, AuditLoggerService auditLogger) {
+    public SecurePainelCagepaFacadeProxy(PainelCagepaFacade painelCagepaFacade, AuthService authService, AuditLoggerService auditLogger, AdminService adminService, ClienteService clienteService) {
         this.painelCagepaFacade = painelCagepaFacade;
         this.authService = authService;
         this.auditLogger = auditLogger;
+        this.adminService = adminService;
+        this.clienteService = clienteService;
         this.authService.initializeDefaultAdmin();
     }
 
@@ -333,5 +341,306 @@ public class SecurePainelCagepaFacadeProxy implements ISecurePainelCagepaFacadeP
             }
         }
         return false;
+    }
+
+    @Override
+    @Transactional
+    public boolean desativarAdmin(String token, String username) {
+        if (!authService.isAuthenticated(token)) {
+            auditLogger.logErro(token, "DESATIVAR_ADMIN", "Token invalido", "Usuario nao autenticado");
+            return false;
+        }
+
+        try {
+            boolean resultado = adminService.desativarAdminPorUsername(username);
+            auditLogger.logSucesso(token, "DESATIVAR_ADMIN", "Admin '" + username + "' desativado com sucesso");
+            return resultado;
+        } catch (IllegalArgumentException e) {
+            auditLogger.logErro(token, "DESATIVAR_ADMIN", "Erro ao desativar admin", e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public List<Cliente> listarClientes(String token) {
+        if (!authService.isAuthenticated(token)) {
+            auditLogger.logErro(token, "LISTAR_CLIENTES", "Token invalido", "Usuario nao autenticado");
+            return null;
+        }
+
+        try {
+            List<Cliente> clientes = clienteService.obterTodosClientes();
+            auditLogger.logSucesso(token, "LISTAR_CLIENTES", "Total de clientes listados: " + clientes.size());
+            return clientes;
+        } catch (Exception e) {
+            auditLogger.logErro(token, "LISTAR_CLIENTES", "Erro ao listar clientes", e.getMessage());
+            return null;
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Cliente obterClientePorCpfCnpj(String token, String cpfCnpj) {
+        if (!authService.isAuthenticated(token)) {
+            auditLogger.logErro(token, "OBTER_CLIENTE_COMPLETO", "Token invalido", "Usuario nao autenticado");
+            return null;
+        }
+
+        try {
+            var cliente = clienteService.obterClientePorCpfCnpj(cpfCnpj);
+            if (cliente.isPresent()) {
+                var clienteData = cliente.get();
+                // Inicializa as coleções lazy-loaded
+                clienteData.getEnderecos().size();
+                clienteData.getHidrometros().size();
+                auditLogger.logSucesso(token, "OBTER_CLIENTE_COMPLETO", "Cliente obtido: " + cpfCnpj);
+                return clienteData;
+            } else {
+                auditLogger.logErro(token, "OBTER_CLIENTE_COMPLETO", "Cliente nao encontrado", cpfCnpj);
+                return null;
+            }
+        } catch (Exception e) {
+            auditLogger.logErro(token, "OBTER_CLIENTE_COMPLETO", "Erro ao obter cliente", e.getMessage());
+            return null;
+        }
+    }
+
+    @Override
+    @Transactional
+    public boolean adicionarEnderecoCliente(String token, String cpfCnpj, 
+                                           String logradouro, String numero, String complemento,
+                                           String bairro, String cidade, String estado, String cep) {
+        if (!authService.isAuthenticated(token)) {
+            auditLogger.logErro(token, "ADICIONAR_ENDERECO", "Token invalido", "Usuario nao autenticado");
+            return false;
+        }
+
+        try {
+            var endereco = new EnderecoDTO(logradouro, numero, complemento, bairro, cidade, estado, cep, TipoEndereco.RESIDENCIAL);
+            clienteService.adicionarEnderecoCliente(cpfCnpj, endereco);
+            auditLogger.logSucesso(token, "ADICIONAR_ENDERECO", "Endereco adicionado ao cliente: " + cpfCnpj);
+            return true;
+        } catch (Exception e) {
+            auditLogger.logErro(token, "ADICIONAR_ENDERECO", "Erro ao adicionar endereco", e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.fachada.cagepa.fachadacagepa.infra.persistence.Hidrometro> obterHidrometrosPorCliente(String token, String clienteCpfCnpj) {
+        if (!authService.isAuthenticated(token)) {
+            auditLogger.logErro(token, "LISTAR_HIDROMETROS", "Token invalido", "Usuario nao autenticado");
+            return null;
+        }
+
+        try {
+            var hidrometros = painelCagepaFacade.obterHidrometrosPorCliente(clienteCpfCnpj);
+            // Inicializa os endereços lazy-loaded antes de retornar
+            if (hidrometros != null) {
+                for (var h : hidrometros) {
+                    if (h.getEnderecoInstalacao() != null) {
+                        h.getEnderecoInstalacao().getLogradouro(); // Força inicialização
+                    }
+                }
+            }
+            auditLogger.logSucesso(token, "LISTAR_HIDROMETROS", "Hidrometros listados para cliente: " + clienteCpfCnpj);
+            return hidrometros;
+        } catch (Exception e) {
+            auditLogger.logErro(token, "LISTAR_HIDROMETROS", "Erro ao listar hidrometros", e.getMessage());
+            return null;
+        }
+    }
+
+    @Override
+    @Transactional
+    public boolean alterarStatusHidrometro(String token, String shaId, boolean ativo) {
+        if (!authService.isAuthenticated(token)) {
+            auditLogger.logErro(token, "ALTERAR_STATUS_HIDROMETRO", "Token invalido", "Usuario nao autenticado");
+            return false;
+        }
+
+        try {
+            var resultado = painelCagepaFacade.alterarStatusHidrometro(shaId, ativo);
+            auditLogger.logSucesso(token, "ALTERAR_STATUS_HIDROMETRO", 
+                "Hydrometro " + shaId + " status alterado para: " + (ativo ? "ATIVO" : "INATIVO"));
+            return resultado;
+        } catch (Exception e) {
+            auditLogger.logErro(token, "ALTERAR_STATUS_HIDROMETRO", "Erro ao alterar status", e.getMessage());
+            return false;
+        }
+    }
+
+    // ==================== Métodos de RF-021 a RF-039 ====================
+
+    /**
+     * RF-021: Buscar um hidrômetro pelo identificador SHA
+     */
+    @Override
+    @Transactional
+    public com.fachada.cagepa.fachadacagepa.infra.persistence.Hidrometro obterHidrometroPorSha(String token, String idSha) throws ValidationException {
+        if (!authService.isAuthenticated(token)) {
+            auditLogger.logErro(token, "BUSCAR_HIDROMETRO_SHA", "Token invalido", "Usuario nao autenticado");
+            throw new ValidationException("Usuario nao autenticado");
+        }
+
+        try {
+            var hidrometro = painelCagepaFacade.obterHidrometroPorSha(idSha);
+            auditLogger.logSucesso(token, "BUSCAR_HIDROMETRO_SHA", "Hidrometro encontrado: " + idSha);
+            return hidrometro;
+        } catch (ValidationException e) {
+            auditLogger.logErro(token, "BUSCAR_HIDROMETRO_SHA", "Erro na validacao", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            auditLogger.logErro(token, "BUSCAR_HIDROMETRO_SHA", "Erro ao buscar hidrometro", e.getMessage());
+            throw new ValidationException("Erro ao buscar hidrometro: " + e.getMessage());
+        }
+    }
+
+    /**
+     * RF-032: Retorna o consumo individual de cada hidrômetro do cliente
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<com.fachada.cagepa.fachadacagepa.domain.application.dtos.ConsumoHidrometroDTO> obterConsumoIndividualPorHidrometro(String token, String clienteCpfCnpj) throws ValidationException {
+        if (!authService.isAuthenticated(token)) {
+            auditLogger.logErro(token, "CONSUMO_INDIVIDUAL_HIDROMETRO", "Token invalido", "Usuario nao autenticado");
+            throw new ValidationException("Usuario nao autenticado");
+        }
+
+        try {
+            var consumos = painelCagepaFacade.obterConsumoIndividualPorHidrometro(clienteCpfCnpj);
+            auditLogger.logSucesso(token, "CONSUMO_INDIVIDUAL_HIDROMETRO", 
+                "Consumo individual obtido para cliente: " + clienteCpfCnpj);
+            return consumos;
+        } catch (ValidationException e) {
+            auditLogger.logErro(token, "CONSUMO_INDIVIDUAL_HIDROMETRO", "Erro na validacao", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            auditLogger.logErro(token, "CONSUMO_INDIVIDUAL_HIDROMETRO", "Erro ao obter consumo", e.getMessage());
+            throw new ValidationException("Erro ao obter consumo: " + e.getMessage());
+        }
+    }
+
+    /**
+     * RF-033: Retorna a soma do consumo de todos os hidrômetros do cliente
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public int obterConsumoTotalCliente(String token, String clienteCpfCnpj) throws ValidationException {
+        if (!authService.isAuthenticated(token)) {
+            auditLogger.logErro(token, "CONSUMO_TOTAL_CLIENTE", "Token invalido", "Usuario nao autenticado");
+            throw new ValidationException("Usuario nao autenticado");
+        }
+
+        try {
+            var consumoTotal = painelCagepaFacade.obterConsumoTotalCliente(clienteCpfCnpj);
+            auditLogger.logSucesso(token, "CONSUMO_TOTAL_CLIENTE", 
+                "Consumo total obtido para cliente: " + clienteCpfCnpj + " = " + consumoTotal + " m3");
+            return consumoTotal;
+        } catch (ValidationException e) {
+            auditLogger.logErro(token, "CONSUMO_TOTAL_CLIENTE", "Erro na validacao", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            auditLogger.logErro(token, "CONSUMO_TOTAL_CLIENTE", "Erro ao obter consumo total", e.getMessage());
+            throw new ValidationException("Erro ao obter consumo total: " + e.getMessage());
+        }
+    }
+
+    /**
+     * RF-036: Retorna os emails enviados para clientes que ultrapassaram >= 70% do limite
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<com.fachada.cagepa.fachadacagepa.infra.persistence.Notificacao> obterEmailsNotificacoes(String token) throws ValidationException {
+        if (!authService.isAuthenticated(token)) {
+            auditLogger.logErro(token, "LISTAR_EMAILS_NOTIFICACOES", "Token invalido", "Usuario nao autenticado");
+            throw new ValidationException("Usuario nao autenticado");
+        }
+
+        try {
+            var emails = painelCagepaFacade.obterEmailsNotificacoes();
+            auditLogger.logSucesso(token, "LISTAR_EMAILS_NOTIFICACOES", 
+                "Emails de notificacoes listados: " + emails.size());
+            return emails;
+        } catch (Exception e) {
+            auditLogger.logErro(token, "LISTAR_EMAILS_NOTIFICACOES", "Erro ao listar emails", e.getMessage());
+            throw new ValidationException("Erro ao listar emails: " + e.getMessage());
+        }
+    }
+
+    /**
+     * RF-037: Retorna histórico de notificações enviadas
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<com.fachada.cagepa.fachadacagepa.infra.persistence.Notificacao> obterHistoricoNotificacoes(String token, String clienteCpfCnpj) throws ValidationException {
+        if (!authService.isAuthenticated(token)) {
+            auditLogger.logErro(token, "HISTORICO_NOTIFICACOES", "Token invalido", "Usuario nao autenticado");
+            throw new ValidationException("Usuario nao autenticado");
+        }
+
+        try {
+            var historico = painelCagepaFacade.obterHistoricoNotificacoes(clienteCpfCnpj);
+            auditLogger.logSucesso(token, "HISTORICO_NOTIFICACOES", 
+                "Historico de notificacoes obtido para cliente: " + clienteCpfCnpj);
+            return historico;
+        } catch (ValidationException e) {
+            auditLogger.logErro(token, "HISTORICO_NOTIFICACOES", "Erro na validacao", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            auditLogger.logErro(token, "HISTORICO_NOTIFICACOES", "Erro ao obter historico", e.getMessage());
+            throw new ValidationException("Erro ao obter historico: " + e.getMessage());
+        }
+    }
+
+    /**
+     * RF-038: Verifica se pode enviar notificação (não duplicada no mesmo dia)
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public boolean podeEnviarNotificacao(String token, String clienteCpfCnpj, String hidrometroIdSha) throws ValidationException {
+        if (!authService.isAuthenticated(token)) {
+            auditLogger.logErro(token, "VALIDAR_NOTIFICACAO_DUPLICADA", "Token invalido", "Usuario nao autenticado");
+            throw new ValidationException("Usuario nao autenticado");
+        }
+
+        try {
+            var podeEnviar = painelCagepaFacade.podeEnviarNotificacao(clienteCpfCnpj, hidrometroIdSha);
+            if (podeEnviar) {
+                auditLogger.logSucesso(token, "VALIDAR_NOTIFICACAO_DUPLICADA", 
+                    "Notificacao pode ser enviada - Cliente: " + clienteCpfCnpj + " Hidrometro: " + hidrometroIdSha);
+            } else {
+                auditLogger.logAviso(token, "VALIDAR_NOTIFICACAO_DUPLICADA", 
+                    "Notificacao duplicada detectada no mesmo dia - Cliente: " + clienteCpfCnpj + " Hidrometro: " + hidrometroIdSha);
+            }
+            return podeEnviar;
+        } catch (Exception e) {
+            auditLogger.logErro(token, "VALIDAR_NOTIFICACAO_DUPLICADA", "Erro ao validar", e.getMessage());
+            throw new ValidationException("Erro ao validar notificacao: " + e.getMessage());
+        }
+    }
+
+    /**
+     * RF-039: Retorna histórico de auditoria das operações realizadas no sistema
+     * Permite rastreabilidade das operações: CRUD, Usuário, Timestamp, Resultado
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<com.fachada.cagepa.fachadacagepa.infra.persistence.AuditEntry> obterHistoricoAuditoriaCompleto(String token) throws ValidationException {
+        if (!authService.isAuthenticated(token)) {
+            auditLogger.logErro(token, "HISTORICO_AUDITORIA_COMPLETO", "Token invalido", "Usuario nao autenticado");
+            throw new ValidationException("Usuario nao autenticado");
+        }
+
+        try {
+            var auditoria = painelCagepaFacade.obterHistoricoAuditoria();
+            auditLogger.logSucesso(token, "HISTORICO_AUDITORIA_COMPLETO", 
+                "Historico de auditoria obtido: " + auditoria.size() + " registros");
+            return auditoria;
+        } catch (Exception e) {
+            auditLogger.logErro(token, "HISTORICO_AUDITORIA_COMPLETO", "Erro ao obter historico", e.getMessage());
+            throw new ValidationException("Erro ao obter historico de auditoria: " + e.getMessage());
+        }
     }
 }

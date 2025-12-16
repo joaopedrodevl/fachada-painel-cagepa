@@ -121,4 +121,19 @@ public class Cliente {
     public ClienteState getClienteState() {
         return this.clienteState;
     }
+
+    /**
+     * Retorna o nome apropriado do cliente baseado no tipo (PF ou PJ)
+     * Para PF: retorna nomeCompleto
+     * Para PJ: retorna nomeFantasia se disponível, senão razaoSocial
+     */
+    public String getNomeParaNotificacao() {
+        // Se tem razaoSocial ou nomeFantasia preenchido, é PJ
+        if ((razaoSocial != null && !razaoSocial.isEmpty()) || 
+            (nomeFantasia != null && !nomeFantasia.isEmpty())) {
+            return (nomeFantasia != null && !nomeFantasia.isEmpty()) ? nomeFantasia : razaoSocial;
+        }
+        // Caso contrário é PF
+        return nomeCompleto;
+    }
 }

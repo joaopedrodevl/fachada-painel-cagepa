@@ -75,7 +75,7 @@ public class NotificacaoConsumoService {
 
                 if (consumoLimiarStrategy.deveCautivar(percentualConsumo)) {
                     NotificacaoConsumo notificacao = new NotificacaoConsumo(
-                        cliente.getNomeCompleto(),
+                        cliente.getNomeParaNotificacao(),
                         cliente.getEmail(),
                         hidrometro.getIdSha(),
                         consumoMensal,
@@ -86,10 +86,10 @@ public class NotificacaoConsumoService {
                     if (notificacaoStrategy != null && notificacaoStrategy.enviarNotificacao(notificacao)) {
                         notificacoesEnviadas++;
                         notificacaoObserver.registrarNotificacao(notificacao);
-                        logger.info("Notificacao enviada para cliente {} | Hidrometro: {} | Consumo: {} m3 ({}%)", cliente.getNomeCompleto(), hidrometro.getIdSha(), String.format("%.2f", consumoMensal), String.format("%.1f", percentualConsumo));
+                        logger.info("Notificacao enviada para cliente {} | Hidrometro: {} | Consumo: {} m3 ({}%)", cliente.getNomeParaNotificacao(), hidrometro.getIdSha(), String.format("%.2f", consumoMensal), String.format("%.1f", percentualConsumo));
                     } else {
                         erros++;
-                        logger.error("Falha ao enviar notificacao para cliente {} | Hidrometro: {}", cliente.getNomeCompleto(), hidrometro.getIdSha());
+                        logger.error("Falha ao enviar notificacao para cliente {} | Hidrometro: {}", cliente.getNomeParaNotificacao(), hidrometro.getIdSha());
                     }
                 }
             } catch (Exception e) {

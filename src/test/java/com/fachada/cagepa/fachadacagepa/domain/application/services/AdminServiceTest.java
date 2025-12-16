@@ -166,7 +166,8 @@ class AdminServiceTest {
         // Assert
         assertThat(resultado).isTrue();
         Optional<Admin> adminEncontrado = adminJpaRepository.findById(adminId);
-        assertThat(adminEncontrado).isEmpty();
+        assertThat(adminEncontrado).isPresent();
+        assertThat(adminEncontrado.get().getAtivo()).isFalse();
     }
 
     @Test
@@ -193,7 +194,8 @@ class AdminServiceTest {
         // Assert
         assertThat(resultado).isTrue();
         Optional<Admin> adminEncontrado = adminJpaRepository.findByUsername(username);
-        assertThat(adminEncontrado).isEmpty();
+        assertThat(adminEncontrado).isPresent();
+        assertThat(adminEncontrado.get().getAtivo()).isFalse();
     }
 
 }

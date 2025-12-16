@@ -213,7 +213,7 @@ public class ResendEmailNotificacaoStrategy implements NotificacaoStrategy {
                 "        </div>\n" +
                 "        <div class=\"content\">\n" +
                 "            <div class=\"greeting\">\n" +
-                "                <strong>Prezado(a) " + notificacao.getClienteNome() + ",</strong>\n" +
+                "                <strong>Prezado(a) " + notificacao.getClienteNome()  + ",</strong>\n" +
                 "                <p>Informamos que um de seus hidrometros registrou um consumo elevado de água. Recomendamos que você verifique sua utilização para evitar surpresas na próxima fatura.</p>\n" +
                 "            </div>\n" +
                 "            <div class=\"alert-box\">\n" +

@@ -2,19 +2,26 @@ package com.fachada.cagepa.fachadacagepa;
 
 import com.fachada.cagepa.fachadacagepa.facade.proxy.SecurePainelCagepaFacadeProxy;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.validation.ValidationException;
+import com.fachada.cagepa.fachadacagepa.infra.persistence.Hidrometro;
+import com.fachada.cagepa.fachadacagepa.infra.persistence.Notificacao;
+import com.fachada.cagepa.fachadacagepa.domain.application.dtos.ConsumoHidrometroDTO;
+import com.fachada.cagepa.fachadacagepa.infra.persistence.AuditEntry;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Scanner;
 
 @SpringBootApplication
 public class FachadaCagepaApplication implements CommandLineRunner {
 
     private final SecurePainelCagepaFacadeProxy securePainelCagepaFacadeProxy;
+    private static ApplicationContext applicationContext;
 
     @Value("${app.cli.enabled:true}")
     private boolean cliEnabled;
@@ -24,7 +31,7 @@ public class FachadaCagepaApplication implements CommandLineRunner {
 
     // Valores padrão para inputs
     private static final String DEFAULT_USERNAME = "admin";
-    private static final String DEFAULT_PASSWORD = "123456";
+    private static final String DEFAULT_PASSWORD = "Admin123@";
     private static final String DEFAULT_CPF = "949.545.430-10";
     private static final String DEFAULT_NOME_PF = "João da Silva";
     private static final String DEFAULT_EMAIL = "joao@email.com";
@@ -42,7 +49,7 @@ public class FachadaCagepaApplication implements CommandLineRunner {
     }
 
     public static void main(String[] args) {
-        SpringApplication.run(FachadaCagepaApplication.class, args);
+        applicationContext = SpringApplication.run(FachadaCagepaApplication.class, args);
     }
 
     @Override
@@ -54,11 +61,15 @@ public class FachadaCagepaApplication implements CommandLineRunner {
         scanner = new Scanner(System.in);
 
         System.out.println("========== CLIENTE CLI - PAINEL CAGEPA ==========\n");
-        System.out.println("Realizando login com credenciais padrao...");
-        token = securePainelCagepaFacadeProxy.login(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        
+        String username = lerString("Username: ", DEFAULT_USERNAME);
+        String password = lerString("Password: ", DEFAULT_PASSWORD);
+        
+        System.out.println("\nRealizando login...");
+        token = securePainelCagepaFacadeProxy.login(username, password);
 
         if (token == null) {
-            System.err.println("Falha ao fazer login");
+            System.err.println("Falha ao fazer login com as credenciais fornecidas");
             return;
         }
 
@@ -87,21 +98,61 @@ public class FachadaCagepaApplication implements CommandLineRunner {
                         criarNovoAdmin();
                         break;
                     case 6:
-                        verHistoricoAuditoria();
+                        desativarAdmin();
                         break;
                     case 7:
-                        configurarSistema();
+                        listarClientes();
                         break;
                     case 8:
+                        verHistoricoAuditoria();
+                        break;
+                    case 9:
+                        configurarSistema();
+                        break;
+                    case 10:
                         securePainelCagepaFacadeProxy.verificarENotificarConsumoAlto(token);
                         System.out.println("Verificacao de consumo concluida!");
                         break;
-                    case 9:
+                    case 11:
                         verRelatorioNotificacoes();
+                        break;
+                    case 12:
+                        obterClienteCompleto();
+                        break;
+                    case 13:
+                        adicionarEnderecoCliente();
+                        break;
+                    case 14:
+                        listarHidrometrosPorCliente();
+                        break;
+                    case 15:
+                        alterarStatusHidrometro();
+                        break;
+                    case 16:
+                        buscarHidrometroPorSha();
+                        break;
+                    case 17:
+                        obterConsumoIndividualPorHidrometro();
+                        break;
+                    case 18:
+                        obterConsumoTotalCliente();
+                        break;
+                    case 19:
+                        listarEmailsNotificacoes();
+                        break;
+                    case 20:
+                        obterHistoricoNotificacoes();
+                        break;
+                    case 21:
+                        validarNotificacaoDuplicada();
+                        break;
+                    case 22:
+                        exibirAuditoriaCompleta();
                         break;
                     case 0:
                         continuar = false;
-                        System.out.println("Ate logo!");
+                        System.out.println("\nFinalizando aplicacao...");
+                        encerrarAplicacao();
                         break;
                     default:
                         System.out.println("Opcao invalida!");
@@ -126,10 +177,23 @@ public class FachadaCagepaApplication implements CommandLineRunner {
         System.out.println("3 - Registrar Hidrometro");
         System.out.println("4 - Obter Consumo de Cliente");
         System.out.println("5 - Criar novo Admin");
-        System.out.println("6 - Ver Historico de Auditoria");
-        System.out.println("7 - Configuracoes do Sistema");
-        System.out.println("8 - Verificar e Notificar Consumo Alto");
-        System.out.println("9 - Ver Relatorio de Notificacoes");
+        System.out.println("6 - Desativar Admin");
+        System.out.println("7 - Listar Clientes");
+        System.out.println("8 - Ver Historico de Auditoria");
+        System.out.println("9 - Configuracoes do Sistema");
+        System.out.println("10 - Verificar e Notificar Consumo Alto");
+        System.out.println("11 - Ver Relatorio de Notificacoes");
+        System.out.println("12 - Obter Dados Completos de Cliente");
+        System.out.println("13 - Adicionar Endereco a Cliente");
+        System.out.println("14 - Listar Hidrometros por Cliente");
+        System.out.println("15 - Ativar/Desativar Hidrometro");
+        System.out.println("16 - Buscar Hidrometro por SHA");
+        System.out.println("17 - Consumo Individual por Hidrometro");
+        System.out.println("18 - Consumo Total do Cliente");
+        System.out.println("19 - Listar Emails de Notificacoes");
+        System.out.println("20 - Historico de Notificacoes");
+        System.out.println("21 - Validar Notificacao Duplicada");
+        System.out.println("22 - Auditoria Completa");
         System.out.println("0 - Sair");
         System.out.println("========================================");
     }
@@ -405,6 +469,64 @@ public class FachadaCagepaApplication implements CommandLineRunner {
         System.out.println(relatorio);
     }
 
+    private void desativarAdmin() {
+        System.out.println("\n========== DESATIVAR ADMINISTRADOR ==========");
+
+        String username = lerString("Username do admin a desativar: ", "");
+
+        if (username.isEmpty()) {
+            System.out.println("Username nao pode estar vazio!");
+            return;
+        }
+
+        String confirmacao = lerString("Tem certeza que deseja desativar o admin '" + username + "'? (s/n): ", "n");
+
+        if (!confirmacao.equalsIgnoreCase("s")) {
+            System.out.println("Operacao cancelada.");
+            return;
+        }
+
+        try {
+            boolean resultado = securePainelCagepaFacadeProxy.desativarAdmin(token, username);
+
+            if (resultado) {
+                System.out.println("Admin '" + username + "' desativado com sucesso!");
+            } else {
+                System.out.println("Falha ao desativar admin.");
+            }
+        } catch (Exception e) {
+            System.err.println("Erro: " + e.getMessage());
+        }
+    }
+
+    private void listarClientes() {
+        System.out.println("\n========== LISTAR CLIENTES ==========");
+
+        try {
+            var clientes = securePainelCagepaFacadeProxy.listarClientes(token);
+
+            if (clientes == null || clientes.isEmpty()) {
+                System.out.println("Nenhum cliente cadastrado.");
+                return;
+            }
+
+            System.out.println("\nTotal de clientes: " + clientes.size());
+            System.out.println("=====================================");
+
+            for (var cliente : clientes) {
+                System.out.println("\nCPF/CNPJ: " + cliente.getCpfCnpj());
+                System.out.println("Nome: " + (cliente.getNomeCompleto() != null ? cliente.getNomeCompleto() : cliente.getNomeFantasia()));
+                System.out.println("Email: " + cliente.getEmail());
+                System.out.println("Telefone: " + cliente.getTelefone());
+                System.out.println("Tipo: " + cliente.getTipoCliente());
+                System.out.println("Status: " + (cliente.getAtivo() ? "ATIVO" : "INATIVO"));
+                System.out.println("-------------------------------------");
+            }
+        } catch (Exception e) {
+            System.err.println("Erro: " + e.getMessage());
+        }
+    }
+
     private String lerString(String prompt, String defaultValue) {
         System.out.print(prompt);
         String input = scanner.nextLine().trim();
@@ -418,6 +540,352 @@ public class FachadaCagepaApplication implements CommandLineRunner {
             return input.isEmpty() ? -1 : Integer.parseInt(input);
         } catch (NumberFormatException e) {
             return -1;
+        }
+    }
+
+    private void obterClienteCompleto() {
+        System.out.println("\n========== OBTER CLIENTE COMPLETO ==========");
+        
+        String cpfCnpj = lerString("CPF/CNPJ do cliente: ", DEFAULT_CPF);
+        
+        try {
+            var cliente = securePainelCagepaFacadeProxy.obterClientePorCpfCnpj(token, cpfCnpj);
+            
+            if (cliente == null) {
+                System.out.println("Cliente nao encontrado!");
+                return;
+            }
+            
+            System.out.println("\n===== DADOS DO CLIENTE =====");
+            System.out.println("CPF/CNPJ: " + cliente.getCpfCnpj());
+            System.out.println("Nome Completo: " + cliente.getNomeCompleto());
+            System.out.println("Nome Fantasia: " + cliente.getNomeFantasia());
+            System.out.println("Razao Social: " + cliente.getRazaoSocial());
+            System.out.println("Email: " + cliente.getEmail());
+            System.out.println("Telefone: " + cliente.getTelefone());
+            System.out.println("Tipo: " + cliente.getTipoCliente());
+            System.out.println("Status: " + (cliente.getAtivo() ? "ATIVO" : "INATIVO"));
+            System.out.println("Data Cadastro: " + cliente.getDataCadastro());
+            
+            System.out.println("\n===== ENDERECOS =====");
+            if (cliente.getEnderecos() != null && !cliente.getEnderecos().isEmpty()) {
+                for (var endereco : cliente.getEnderecos()) {
+                    System.out.println("\n- " + endereco.getLogradouro() + ", " + endereco.getNumero());
+                    System.out.println("  Complemento: " + endereco.getComplemento());
+                    System.out.println("  Bairro: " + endereco.getBairro());
+                    System.out.println("  Cidade: " + endereco.getCidade());
+                    System.out.println("  Estado: " + endereco.getEstado());
+                    System.out.println("  CEP: " + endereco.getCep());
+                }
+            } else {
+                System.out.println("Nenhum endereco cadastrado.");
+            }
+            
+            System.out.println("\n===== HIDROMETROS =====");
+            if (cliente.getHidrometros() != null && !cliente.getHidrometros().isEmpty()) {
+                for (var hidrometro : cliente.getHidrometros()) {
+                    System.out.println("\n- SHA ID: " + hidrometro.getIdSha());
+                    System.out.println("  Status: " + hidrometro.getStatus());
+                    System.out.println("  Limite Mensal: " + hidrometro.getLimiteConsumoMensalM3() + " m3");
+                    System.out.println("  Data Instalacao: " + hidrometro.getDataInstalacao());
+                }
+            } else {
+                System.out.println("Nenhum hidrometro cadastrado.");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Erro ao obter cliente: " + e.getMessage());
+        }
+    }
+
+    private void adicionarEnderecoCliente() {
+        System.out.println("\n========== ADICIONAR ENDERECO A CLIENTE =====");
+        
+        String cpfCnpj = lerString("CPF/CNPJ do cliente: ", DEFAULT_CPF);
+        String logradouro = lerString("Logradouro: ", DEFAULT_LOGRADOURO);
+        String numero = lerString("Numero: ", DEFAULT_NUMERO);
+        String complemento = lerString("Complemento (opcional): ", DEFAULT_COMPLEMENTO);
+        String bairro = lerString("Bairro: ", DEFAULT_BAIRRO);
+        String cidade = lerString("Cidade: ", DEFAULT_CIDADE);
+        String estado = lerString("Estado: ", DEFAULT_ESTADO);
+        String cep = lerString("CEP: ", DEFAULT_CEP);
+        
+        try {
+            boolean sucesso = securePainelCagepaFacadeProxy.adicionarEnderecoCliente(token, cpfCnpj, 
+                logradouro, numero, complemento, bairro, cidade, estado, cep);
+            
+            if (sucesso) {
+                System.out.println("\nEndereco adicionado com sucesso!");
+            } else {
+                System.out.println("\nFalha ao adicionar endereco!");
+            }
+        } catch (Exception e) {
+            System.err.println("Erro: " + e.getMessage());
+        }
+    }
+
+    private void listarHidrometrosPorCliente() {
+        System.out.println("\n========== LISTAR HIDROMETROS POR CLIENTE =====");
+        
+        String cpfCnpj = lerString("CPF/CNPJ do cliente: ", DEFAULT_CPF);
+        
+        try {
+            var hidrometros = securePainelCagepaFacadeProxy.obterHidrometrosPorCliente(token, cpfCnpj);
+            
+            if (hidrometros == null || hidrometros.isEmpty()) {
+                System.out.println("Nenhum hidrometro cadastrado para este cliente.");
+                return;
+            }
+            
+            System.out.println("\nTotal de hidrometros: " + hidrometros.size());
+            System.out.println("====================================");
+            
+            for (var hidrometro : hidrometros) {
+                System.out.println("\nSHA ID: " + hidrometro.getIdSha());
+                System.out.println("Status: " + hidrometro.getStatus());
+                System.out.println("Limite Mensal: " + hidrometro.getLimiteConsumoMensalM3() + " m3");
+                System.out.println("Data Instalacao: " + hidrometro.getDataInstalacao());
+                System.out.println("Endereco: " + hidrometro.getEnderecoInstalacao().getLogradouro() + 
+                    ", " + hidrometro.getEnderecoInstalacao().getNumero());
+                System.out.println("------------------------------------");
+            }
+        } catch (Exception e) {
+            System.err.println("Erro: " + e.getMessage());
+        }
+    }
+
+    private void alterarStatusHidrometro() {
+        System.out.println("\n========== ATIVAR/DESATIVAR HIDROMETRO =====");
+        
+        String shaId = lerString("SHA ID do hidrometro: ", "");
+        String ativoStr = lerString("Ativar (S/N): ", "S");
+        boolean ativo = ativoStr.equalsIgnoreCase("S") || ativoStr.equalsIgnoreCase("SIM");
+        
+        try {
+            boolean sucesso = securePainelCagepaFacadeProxy.alterarStatusHidrometro(token, shaId, ativo);
+            
+            if (sucesso) {
+                System.out.println("\nStatus do hidrometro alterado com sucesso para: " + 
+                    (ativo ? "ATIVO" : "INATIVO"));
+            } else {
+                System.out.println("\nFalha ao alterar status do hidrometro!");
+            }
+        } catch (Exception e) {
+            System.err.println("Erro: " + e.getMessage());
+        }
+    }
+
+    private void buscarHidrometroPorSha() {
+        System.out.println("\n========== BUSCAR HIDROMETRO POR SHA =====");
+        
+        String idSha = lerString("SHA ID do hidrometro: ", "");
+        
+        try {
+            Hidrometro hidrometro = securePainelCagepaFacadeProxy.obterHidrometroPorSha(token, idSha);
+            
+            System.out.println("------------------------------------");
+            System.out.println("Hidrometro encontrado:");
+            System.out.println("SHA ID: " + hidrometro.getIdSha());
+            System.out.println("Status: " + (hidrometro.getStatus() != null ? hidrometro.getStatus() : "INATIVO"));
+            System.out.println("Limite Mensal: " + hidrometro.getLimiteConsumoMensalM3() + " m3");
+            System.out.println("Data Instalacao: " + hidrometro.getDataInstalacao());
+            if (hidrometro.getEnderecoInstalacao() != null) {
+                System.out.println("Endereco: " + hidrometro.getEnderecoInstalacao().getLogradouro() + 
+                    ", " + hidrometro.getEnderecoInstalacao().getNumero());
+            }
+            System.out.println("------------------------------------");
+        } catch (ValidationException e) {
+            System.err.println("Erro: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Erro inesperado: " + e.getMessage());
+        }
+    }
+
+    private void obterConsumoIndividualPorHidrometro() {
+        System.out.println("\n========== CONSUMO INDIVIDUAL POR HIDROMETRO =====");
+        
+        String cpfCnpj = lerString("CPF/CNPJ do cliente: ", "");
+        
+        try {
+            List<ConsumoHidrometroDTO> consumos = securePainelCagepaFacadeProxy.obterConsumoIndividualPorHidrometro(token, cpfCnpj);
+            
+            if (consumos == null || consumos.isEmpty()) {
+                System.out.println("Nenhum consumo encontrado para este cliente.");
+                return;
+            }
+            
+            System.out.println("------------------------------------");
+            System.out.println("Consumos por Hidrometro:");
+            System.out.println("CPF/CNPJ: " + cpfCnpj);
+            System.out.println();
+            for (ConsumoHidrometroDTO consumo : consumos) {
+                System.out.println("  Hidrometro ID: " + consumo.idHidrometro());
+                System.out.println("  Consumo: " + consumo.consumoM3() + " m3");
+                System.out.println();
+            }
+            System.out.println("------------------------------------");
+        } catch (ValidationException e) {
+            System.err.println("Erro: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Erro inesperado: " + e.getMessage());
+        }
+    }
+
+    private void obterConsumoTotalCliente() {
+        System.out.println("\n========== CONSUMO TOTAL DO CLIENTE =====");
+        
+        String cpfCnpj = lerString("CPF/CNPJ do cliente: ", "");
+        
+        try {
+            Integer consumoTotal = securePainelCagepaFacadeProxy.obterConsumoTotalCliente(token, cpfCnpj);
+            
+            System.out.println("------------------------------------");
+            System.out.println("Consumo Total:");
+            System.out.println("CPF/CNPJ: " + cpfCnpj);
+            System.out.println("Consumo Total: " + (consumoTotal != null ? consumoTotal : 0) + " m3");
+            System.out.println("------------------------------------");
+        } catch (ValidationException e) {
+            System.err.println("Erro: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Erro inesperado: " + e.getMessage());
+        }
+    }
+
+    private void listarEmailsNotificacoes() {
+        System.out.println("\n========== LISTAR EMAILS DE NOTIFICACOES =====");
+        
+        try {
+            List<Notificacao> notificacoes = securePainelCagepaFacadeProxy.obterEmailsNotificacoes(token);
+            
+            if (notificacoes == null || notificacoes.isEmpty()) {
+                System.out.println("Nenhuma notificacao encontrada.");
+                return;
+            }
+            
+            System.out.println("------------------------------------");
+            System.out.println("Emails de Notificacoes Enviadas (ultimos 30 dias):");
+            System.out.println();
+            for (Notificacao notif : notificacoes) {
+                System.out.println("  Cliente: " + (notif.getClienteCpfCnpj() != null ? notif.getClienteCpfCnpj() : "N/A"));
+                System.out.println("  Email: " + (notif.getClienteEmail() != null ? notif.getClienteEmail() : "N/A"));
+                System.out.println("  Assunto: " + (notif.getAssunto() != null ? notif.getAssunto() : "N/A"));
+                System.out.println("  Mensagem: " + (notif.getMensagem() != null ? notif.getMensagem() : "N/A"));
+                System.out.println("  Data Envio: " + (notif.getDataEnvio() != null ? notif.getDataEnvio() : "N/A"));
+                System.out.println("  Status: " + (notif.getStatusEnvio() != null ? notif.getStatusEnvio() : "N/A"));
+                System.out.println();
+            }
+            System.out.println("------------------------------------");
+        } catch (ValidationException e) {
+            System.err.println("Erro: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Erro inesperado: " + e.getMessage());
+        }
+    }
+
+    private void obterHistoricoNotificacoes() {
+        System.out.println("\n========== HISTORICO DE NOTIFICACOES =====");
+        
+        String cpfCnpj = lerString("CPF/CNPJ do cliente: ", "");
+        
+        try {
+            List<Notificacao> notificacoes = securePainelCagepaFacadeProxy.obterHistoricoNotificacoes(token, cpfCnpj);
+            
+            if (notificacoes == null || notificacoes.isEmpty()) {
+                System.out.println("Nenhuma notificacao encontrada para este cliente.");
+                return;
+            }
+            
+            System.out.println("------------------------------------");
+            System.out.println("Historico de Notificacoes:");
+            System.out.println("CPF/CNPJ: " + cpfCnpj);
+            System.out.println();
+            for (Notificacao notif : notificacoes) {
+                System.out.println("  Hidrometro ID: " + (notif.getHidrometroIdSha() != null ? notif.getHidrometroIdSha() : "N/A"));
+                System.out.println("  Assunto: " + (notif.getAssunto() != null ? notif.getAssunto() : "N/A"));
+                System.out.println("  Data Envio: " + (notif.getDataEnvio() != null ? notif.getDataEnvio() : "N/A"));
+                System.out.println("  Status: " + (notif.getStatusEnvio() != null ? notif.getStatusEnvio() : "N/A"));
+                System.out.println();
+            }
+            System.out.println("------------------------------------");
+        } catch (ValidationException e) {
+            System.err.println("Erro: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Erro inesperado: " + e.getMessage());
+        }
+    }
+
+    private void validarNotificacaoDuplicada() {
+        System.out.println("\n========== VALIDAR NOTIFICACAO DUPLICADA =====");
+        
+        String cpfCnpj = lerString("CPF/CNPJ do cliente: ", "");
+        String idSha = lerString("SHA ID do hidrometro: ", "");
+        
+        try {
+            Boolean podeEnviar = securePainelCagepaFacadeProxy.podeEnviarNotificacao(token, cpfCnpj, idSha);
+            
+            System.out.println("------------------------------------");
+            System.out.println("Validacao de Notificacao:");
+            System.out.println("CPF/CNPJ: " + cpfCnpj);
+            System.out.println("Hidrometro ID: " + idSha);
+            System.out.println();
+            if (podeEnviar != null && podeEnviar) {
+                System.out.println("STATUS: Pode enviar notificacao");
+            } else {
+                System.out.println("STATUS: Notificacao ja foi enviada hoje (duplicata)");
+            }
+            System.out.println("------------------------------------");
+        } catch (ValidationException e) {
+            System.err.println("Erro: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Erro inesperado: " + e.getMessage());
+        }
+    }
+
+    private void exibirAuditoriaCompleta() {
+        System.out.println("\n========== AUDITORIA COMPLETA =====");
+        
+        try {
+            List<AuditEntry> auditorias = securePainelCagepaFacadeProxy.obterHistoricoAuditoriaCompleto(token);
+            
+            if (auditorias == null || auditorias.isEmpty()) {
+                System.out.println("Nenhum registro de auditoria encontrado.");
+                return;
+            }
+            
+            System.out.println("------------------------------------");
+            System.out.println("Historico de Auditoria (CRUD):");
+            System.out.println();
+            for (AuditEntry audit : auditorias) {
+                System.out.println("  Timestamp: " + (audit.getTimestamp() != null ? audit.getTimestamp() : "N/A"));
+                System.out.println("  Usuario: " + (audit.getUsername() != null ? audit.getUsername() : "N/A"));
+                System.out.println("  Operacao: " + (audit.getOperacao() != null ? audit.getOperacao() : "N/A"));
+                System.out.println("  Entidade: " + (audit.getEntidade() != null ? audit.getEntidade() : "N/A"));
+                System.out.println("  Detalhes: " + (audit.getDetalhes() != null ? audit.getDetalhes() : "N/A"));
+                System.out.println("  Resultado: " + (audit.getResultado() != null ? audit.getResultado() : "N/A"));
+                System.out.println();
+            }
+            System.out.println("------------------------------------");
+        } catch (ValidationException e) {
+            System.err.println("Erro: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Erro inesperado: " + e.getMessage());
+        }
+    }
+
+    private void encerrarAplicacao() {
+        try {
+            if (scanner != null) {
+                scanner.close();
+            }
+            System.out.println("Encerrando Spring Boot...");
+            if (applicationContext != null) {
+                SpringApplication.exit(applicationContext);
+            } else {
+                System.exit(0);
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao encerrar: " + e.getMessage());
+            System.exit(1);
         }
     }
 }

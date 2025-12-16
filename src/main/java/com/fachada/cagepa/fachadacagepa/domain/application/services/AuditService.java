@@ -1,6 +1,8 @@
 package com.fachada.cagepa.fachadacagepa.domain.application.services;
 
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.LoginAudit;
+import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.OperacaoAudit;
+import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.EntidadeAudit;
 import com.fachada.cagepa.fachadacagepa.infra.persistence.AuditEntry;
 import com.fachada.cagepa.fachadacagepa.infra.persistence.AuditRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +29,7 @@ public class AuditService {
      */
     @Transactional
     public void logLoginSuccess(String username) {
-        auditRepository.save(new AuditEntry(null, LoginAudit.LOGIN_SUCCESS, username, LocalDateTime.now()));
+        auditRepository.save(new AuditEntry(LoginAudit.LOGIN_SUCCESS, username, LocalDateTime.now()));
     }
 
     /**
@@ -35,7 +37,7 @@ public class AuditService {
      */
     @Transactional
     public void logLoginFailure(String username) {
-        auditRepository.save(new AuditEntry(null, LoginAudit.LOGIN_FAILURE, username, LocalDateTime.now()));
+        auditRepository.save(new AuditEntry(LoginAudit.LOGIN_FAILURE, username, LocalDateTime.now()));
     }
 
     /**
@@ -43,7 +45,7 @@ public class AuditService {
      */
     @Transactional
     public void logAdminCreated(String username) {
-        auditRepository.save(new AuditEntry(null, LoginAudit.ADMIN_CREATED, username, LocalDateTime.now()));
+        auditRepository.save(new AuditEntry(LoginAudit.ADMIN_CREATED, username, LocalDateTime.now()));
     }
 
     /**
@@ -51,11 +53,11 @@ public class AuditService {
      */
     @Transactional
     public void logAdminDeactivated(String username) {
-        auditRepository.save(new AuditEntry(null, LoginAudit.ADMIN_DEACTIVATED, username, LocalDateTime.now()));
+        auditRepository.save(new AuditEntry(LoginAudit.ADMIN_DEACTIVATED, username, LocalDateTime.now()));
     }
 
     /**
-     * Log genérico de operação CRUD
+     * Log de operação CRUD com rastreabilidade completa
      * @param operacao Tipo de operação (CREATE, READ, UPDATE, DELETE)
      * @param entidade Tipo de entidade (CLIENTE, HIDROMETRO, LEITURA, etc)
      * @param detalhes Detalhes da operação
@@ -63,17 +65,9 @@ public class AuditService {
      * @param resultado Resultado da operação (SUCESSO, FALHA)
      */
     @Transactional
-    public void logOperacaoCrud(String operacao, String entidade, String detalhes, String usuario, String resultado) {
+    public void logOperacaoCrud(OperacaoAudit operacao, EntidadeAudit entidade, String detalhes, String usuario, String resultado) {
         try {
-            String descricao = String.format("[%s] %s | %s | Usuário: %s | Resultado: %s",
-                    entidade, operacao, detalhes, usuario, resultado);
-
-            auditRepository.save(new AuditEntry(
-                    null,
-                    LoginAudit.LOGIN_SUCCESS, // Usar um tipo genérico
-                    descricao,
-                    LocalDateTime.now()
-            ));
+            auditRepository.save(new AuditEntry(operacao, entidade, usuario, detalhes, resultado));
         } catch (Exception e) {
             System.err.println("Erro ao registrar auditoria: " + e.getMessage());
         }
@@ -84,7 +78,17 @@ public class AuditService {
      */
     @Transactional
     public void logClienteCriado(String cpfCnpj, String nome, String usuario) {
-        logOperacaoCrud("CREATE", "CLIENTE", "CPF/CNPJ: " + cpfCnpj + " | Nome: " + nome, usuario, "SUCESSO");
+        logOperacaoCrud(OperacaoAudit.CREATE, EntidadeAudit.CLIENTE, 
+                "CPF/CNPJ: " + cpfCnpj + " | Nome: " + nome, usuario, "SUCESSO");
+    }
+
+    /**
+     * Log de leitura de cliente
+     */
+    @Transactional
+    public void logClienteLido(String cpfCnpj, String usuario) {
+        logOperacaoCrud(OperacaoAudit.READ, EntidadeAudit.CLIENTE,
+                "CPF/CNPJ: " + cpfCnpj, usuario, "SUCESSO");
     }
 
     /**
@@ -92,7 +96,8 @@ public class AuditService {
      */
     @Transactional
     public void logClienteDesativado(String cpfCnpj, String usuario) {
-        logOperacaoCrud("UPDATE", "CLIENTE", "CPF/CNPJ: " + cpfCnpj + " | Status: INATIVO", usuario, "SUCESSO");
+        logOperacaoCrud(OperacaoAudit.UPDATE, EntidadeAudit.CLIENTE, 
+                "CPF/CNPJ: " + cpfCnpj + " | Status: INATIVO", usuario, "SUCESSO");
     }
 
     /**
@@ -100,7 +105,17 @@ public class AuditService {
      */
     @Transactional
     public void logLeituraHidrometro(String idSha, Integer valor, String usuario) {
-        logOperacaoCrud("CREATE", "LEITURA_HIDROMETRO", "SHA: " + idSha + " | Valor: " + valor, usuario, "SUCESSO");
+        logOperacaoCrud(OperacaoAudit.CREATE, EntidadeAudit.LEITURA, 
+                "SHA: " + idSha + " | Valor: " + valor, usuario, "SUCESSO");
+    }
+
+    /**
+     * Log de leitura de hidrometro
+     */
+    @Transactional
+    public void logBuscaHidrometroPorSha(String idSha, String usuario) {
+        logOperacaoCrud(OperacaoAudit.READ, EntidadeAudit.HIDROMETRO,
+                "SHA: " + idSha, usuario, "SUCESSO");
     }
 
     /**
@@ -108,7 +123,8 @@ public class AuditService {
      */
     @Transactional
     public void logHidrometroCriado(String idSha, String clienteCpfCnpj, String usuario) {
-        logOperacaoCrud("CREATE", "HIDROMETRO", "SHA: " + idSha + " | Cliente: " + clienteCpfCnpj, usuario, "SUCESSO");
+        logOperacaoCrud(OperacaoAudit.CREATE, EntidadeAudit.HIDROMETRO, 
+                "SHA: " + idSha + " | Cliente: " + clienteCpfCnpj, usuario, "SUCESSO");
     }
 
     /**
@@ -116,7 +132,8 @@ public class AuditService {
      */
     @Transactional
     public void logHidrometroStatusAlterado(String idSha, String novoStatus, String usuario) {
-        logOperacaoCrud("UPDATE", "HIDROMETRO", "SHA: " + idSha + " | Novo Status: " + novoStatus, usuario, "SUCESSO");
+        logOperacaoCrud(OperacaoAudit.UPDATE, EntidadeAudit.HIDROMETRO, 
+                "SHA: " + idSha + " | Novo Status: " + novoStatus, usuario, "SUCESSO");
     }
 
     /**
@@ -124,14 +141,15 @@ public class AuditService {
      */
     @Transactional
     public void logNotificacaoEnviada(String clienteCpfCnpj, String idSha, String usuario) {
-        logOperacaoCrud("CREATE", "NOTIFICACAO", "Cliente: " + clienteCpfCnpj + " | Hidrometro: " + idSha, usuario, "SUCESSO");
+        logOperacaoCrud(OperacaoAudit.CREATE, EntidadeAudit.NOTIFICACAO, 
+                "Cliente: " + clienteCpfCnpj + " | Hidrometro: " + idSha, usuario, "SUCESSO");
     }
 
     /**
      * Log de erro em operação
      */
     @Transactional
-    public void logErroOperacao(String operacao, String entidade, String detalhes, String usuario, String erro) {
+    public void logErroOperacao(OperacaoAudit operacao, EntidadeAudit entidade, String detalhes, String usuario, String erro) {
         logOperacaoCrud(operacao, entidade, detalhes + " | Erro: " + erro, usuario, "FALHA");
     }
 

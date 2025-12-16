@@ -10,6 +10,8 @@ import com.fachada.cagepa.fachadacagepa.domain.enterprise.validation.dto.Cliente
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.validation.dto.ClientePjValidator;
 import com.fachada.cagepa.fachadacagepa.domain.enterprise.validation.dto.EnderecoValidator;
 import com.fachada.cagepa.fachadacagepa.domain.util.CpfCnpjValidator;
+import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.OperacaoAudit;
+import com.fachada.cagepa.fachadacagepa.domain.enterprise.enums.EntidadeAudit;
 import com.fachada.cagepa.fachadacagepa.infra.persistence.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
@@ -27,11 +29,14 @@ public class ClienteService {
 
     private final AuditLoggerService auditLogger;
 
-    public ClienteService(IClienteJpaRepository clienteJpaRepository, ClienteFactory clienteFactory, EnderecoFactory enderecoFactory, IEnderecoJpaRepository enderecoJpaRepository, AuditLoggerService auditLogger) {
+    private final AuditService auditService;
+
+    public ClienteService(IClienteJpaRepository clienteJpaRepository, ClienteFactory clienteFactory, EnderecoFactory enderecoFactory, IEnderecoJpaRepository enderecoJpaRepository, AuditLoggerService auditLogger, AuditService auditService) {
         this.clienteJpaRepository = clienteJpaRepository;
         this.clienteFactory = clienteFactory;
         this.enderecoFactory = enderecoFactory;
         this.auditLogger = auditLogger;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -59,11 +64,16 @@ public class ClienteService {
 
             // Log de auditoria
             auditLogger.logSucesso("SISTEMA", "CRIAR_CLIENTE_PF", "Cliente PF criado: " + cliente.nome() + " (CPF: " + cpfLimpo + ")");
+            auditService.logClienteCriado(cpfLimpo, cliente.nome(), "ADMIN");
         } catch (ValidationException e) {
             auditLogger.logErro("SISTEMA", "CRIAR_CLIENTE_PF", "Falha na validacao do cliente PF", e.getMessage());
+            auditService.logErroOperacao(OperacaoAudit.CREATE, EntidadeAudit.CLIENTE, 
+                    "CPF: " + cliente.cpf(), "ADMIN", e.getMessage());
             throw e;
         } catch (Exception e) {
             auditLogger.logErro("SISTEMA", "CRIAR_CLIENTE_PF", "Erro ao criar cliente PF", e.getMessage());
+            auditService.logErroOperacao(OperacaoAudit.CREATE, EntidadeAudit.CLIENTE,
+                    "CPF: " + cliente.cpf(), "ADMIN", e.getMessage());
             throw new RuntimeException("Erro ao criar cliente PF", e);
         }
     }
@@ -93,11 +103,16 @@ public class ClienteService {
 
             // Log de auditoria
             auditLogger.logSucesso("SISTEMA", "CRIAR_CLIENTE_PJ", "Cliente PJ criado: " + cliente.nomeFantasia() + " (CNPJ: " + cnpjLimpo + ")");
+            auditService.logClienteCriado(cnpjLimpo, cliente.nomeFantasia(), "ADMIN");
         } catch (ValidationException e) {
             auditLogger.logErro("SISTEMA", "CRIAR_CLIENTE_PJ", "Falha na validacao do cliente PJ", e.getMessage());
+            auditService.logErroOperacao(OperacaoAudit.CREATE, EntidadeAudit.CLIENTE,
+                    "CNPJ: " + cliente.cnpj(), "ADMIN", e.getMessage());
             throw e;
         } catch (Exception e) {
             auditLogger.logErro("SISTEMA", "CRIAR_CLIENTE_PJ", "Erro ao criar cliente PJ", e.getMessage());
+            auditService.logErroOperacao(OperacaoAudit.CREATE, EntidadeAudit.CLIENTE,
+                    "CNPJ: " + cliente.cnpj(), "ADMIN", e.getMessage());
             throw new RuntimeException("Erro ao criar cliente PJ", e);
         }
     }

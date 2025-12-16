@@ -79,7 +79,12 @@ public class AdminService {
             var admin = adminJpaRepository.findById(adminId)
                     .orElseThrow(() -> new IllegalArgumentException("Admin não encontrado com ID: " + adminId));
 
-            adminJpaRepository.delete(admin);
+            if (!admin.getAtivo()) {
+                throw new IllegalArgumentException("Admin já está inativo: " + admin.getUsername());
+            }
+
+            admin.setAtivo(false);
+            adminJpaRepository.save(admin);
 
             // Log de auditoria
             if (auditService != null) {
@@ -107,7 +112,12 @@ public class AdminService {
             var admin = adminJpaRepository.findByUsername(username)
                     .orElseThrow(() -> new IllegalArgumentException("Admin não encontrado com username: " + username));
 
-            adminJpaRepository.delete(admin);
+            if (!admin.getAtivo()) {
+                throw new IllegalArgumentException("Admin já está inativo: " + username);
+            }
+
+            admin.setAtivo(false);
+            adminJpaRepository.save(admin);
 
             // Log de auditoria
             if (auditService != null) {
